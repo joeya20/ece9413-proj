@@ -1,0 +1,3 @@
+[flake8]
+; https://pycodestyle.pycqa.org/en/latest/intro.html#error-codes
+extend-ignore = E203, E261, E221, E501, W293

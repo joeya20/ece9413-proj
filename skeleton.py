@@ -1,6 +1,7 @@
 import os
 import argparse
 
+
 class IMEM(object):
     def __init__(self, iodir):
         self.size = pow(2, 16) # Can hold a maximum of 2^16 instructions.
@@ -12,14 +13,16 @@ class IMEM(object):
                 self.instructions = [ins.strip() for ins in insf.readlines()]
             print("IMEM - Instructions loaded from file:", self.filepath)
             # print("IMEM - Instructions:", self.instructions)
-        except:
+        except Exception as e:
             print("IMEM - ERROR: Couldn't open file in path:", self.filepath)
+            print("Exception: ", e)
 
     def Read(self, idx): # Use this to read from IMEM.
         if idx < self.size:
             return self.instructions[idx]
         else:
             print("IMEM - ERROR: Invalid memory access at index: ", idx, " with memory size: ", self.size)
+
 
 class DMEM(object):
     # Word addressible - each address contains 32 bits.
@@ -38,8 +41,9 @@ class DMEM(object):
             print(self.name, "- Data loaded from file:", self.ipfilepath)
             # print(self.name, "- Data:", self.data)
             self.data.extend([0x0 for i in range(self.size - len(self.data))])
-        except:
+        except Exception as e:
             print(self.name, "- ERROR: Couldn't open input file in path:", self.ipfilepath)
+            print("Exception: ", e)
 
     def Read(self, idx): # Use this to read from DMEM.
         pass # Replace this line with your code here.
@@ -53,11 +57,13 @@ class DMEM(object):
                 lines = [str(data) + '\n' for data in self.data]
                 opf.writelines(lines)
             print(self.name, "- Dumped data into output file in path:", self.opfilepath)
-        except:
+        except Exception as e:
             print(self.name, "- ERROR: Couldn't open output file in path:", self.opfilepath)
+            print("Exception: ", e)
+
 
 class RegisterFile(object):
-    def __init__(self, name, count, length = 1, size = 32):
+    def __init__(self, name, count, length=1, size=32):
         self.name       = name
         self.reg_count  = count
         self.vec_length = length # Number of 32 bit words in a register.
@@ -81,8 +87,10 @@ class RegisterFile(object):
                 lines += [row_format.format(*[str(val) for val in data]) + "\n" for data in self.registers]
                 opf.writelines(lines)
             print(self.name, "- Dumped data into output file in path:", opfilepath)
-        except:
+        except Exception as e:
             print(self.name, "- ERROR: Couldn't open output file in path:", opfilepath)
+            print("Exception: ", e)
+
 
 class Core():
     def __init__(self, imem, sdmem, vdmem):
@@ -92,19 +100,20 @@ class Core():
 
         self.RFs = {"SRF": RegisterFile("SRF", 8),
                     "VRF": RegisterFile("VRF", 8, 64)}
-        
+
         # Your code here.
         
     def run(self):
-        while(True):
+        while (True):
             break # Replace this line with your code.
 
     def dumpregs(self, iodir):
         for rf in self.RFs.values():
             rf.dump(iodir)
 
+
 if __name__ == "__main__":
-    #parse arguments for input file location
+    # parse arguments for input file location
     parser = argparse.ArgumentParser(description='Vector Core Performance Model')
     parser.add_argument('--iodir', default="", type=str, help='Path to the folder containing the input files - instructions and data.')
     args = parser.parse_args()
@@ -113,17 +122,17 @@ if __name__ == "__main__":
     print("IO Directory:", iodir)
 
     # Parse IMEM
-    imem = IMEM(iodir)  
+    imem = IMEM(iodir)
     # Parse SMEM
-    sdmem = DMEM("SDMEM", iodir, 13) # 32 KB is 2^15 bytes = 2^13 K 32-bit words.
+    sdmem = DMEM("SDMEM", iodir, 13)  # 32 KB is 2^15 bytes = 2^13 K 32-bit words.
     # Parse VMEM
-    vdmem = DMEM("VDMEM", iodir, 17) # 512 KB is 2^19 bytes = 2^17 K 32-bit words. 
+    vdmem = DMEM("VDMEM", iodir, 17)  # 512 KB is 2^19 bytes = 2^17 K 32-bit words.
 
     # Create Vector Core
     vcore = Core(imem, sdmem, vdmem)
 
     # Run Core
-    vcore.run()   
+    vcore.run()
     vcore.dumpregs(iodir)
 
     sdmem.dump()

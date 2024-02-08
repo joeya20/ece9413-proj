@@ -18,7 +18,7 @@ class IMEM(object):
             print("Exception: ", e)
 
     def Read(self, idx): # Use this to read from IMEM.
-        if idx < self.size:
+        if idx >= 0 and idx < self.size:
             return self.instructions[idx]
         else:
             print("IMEM - ERROR: Invalid memory access at index: ", idx, " with memory size: ", self.size)
@@ -45,11 +45,26 @@ class DMEM(object):
             print(self.name, "- ERROR: Couldn't open input file in path:", self.ipfilepath)
             print("Exception: ", e)
 
+    def checkIdx(self, idx):
+        if idx < 0 or idx >= self.size:
+            raise ValueError('invalid DMEM index')
+    
+    def checkVal(self, val):
+        if val < self.min_value or val > self.max_value:
+            raise ValueError('invalid register write value')
+    
+    # this can only service word reads, not vector reads
+    # TODO: implement vector read later?
     def Read(self, idx): # Use this to read from DMEM.
-        pass # Replace this line with your code here.
+        self.checkIdx(idx)
+        return self.instructions[idx]
 
+    # this can only service word writes, not vector writes
+    # TODO: implement vector write later?
     def Write(self, idx, val): # Use this to write into DMEM.
-        pass # Replace this line with your code here.
+        self.checkIdx(idx)
+        self.checkVal(val)
+        self.data[idx] = val
 
     def dump(self):
         try:
@@ -64,6 +79,10 @@ class DMEM(object):
 
 class RegisterFile(object):
     def __init__(self, name, count, length=1, size=32):
+        if length < 1:
+            raise ValueError('invalid RF vec length')
+        if count < 1:
+            raise ValueError('invalid RF reg count')
         self.name       = name
         self.reg_count  = count
         self.vec_length = length # Number of 32 bit words in a register.
@@ -72,11 +91,35 @@ class RegisterFile(object):
         self.max_value  = pow(2, self.reg_bits-1) - 1
         self.registers  = [[0x0 for e in range(self.vec_length)] for r in range(self.reg_count)] # list of lists of integers
 
+    def checkIdx(self, idx):
+        if idx < 0 or idx >= self.reg_count:
+            raise ValueError('invalid register index')
+    
+    # assuming that val is list for vector register
+    # and any other type for scalar register
+    def checkVal(self, val):
+        if type(val) is list:
+            for element in val:
+                if element < self.min_value or element > self.max_value:
+                    raise ValueError('invalid register write value')
+        else:
+            if val < self.min_value or val > self.max_value:
+                raise ValueError('invalid register write value')
+        
     def Read(self, idx):
-        pass # Replace this line with your code.
+        self.checkIdx(idx)
+        if self.name == 'SRF':
+            return self.registers[idx][0]
+        else:
+            return self.registers[idx]
 
     def Write(self, idx, val):
-        pass # Replace this line with your code.
+        self.checkIdx(idx)
+        self.checkVal(val)
+        if self.name == 'SRF':
+            self.registers[idx][0] = val
+        else:
+            self.registers[idx] = val
 
     def dump(self, iodir):
         opfilepath = os.path.abspath(os.path.join(iodir, self.name + ".txt"))
@@ -90,6 +133,24 @@ class RegisterFile(object):
         except Exception as e:
             print(self.name, "- ERROR: Couldn't open output file in path:", opfilepath)
             print("Exception: ", e)
+
+
+# class SRF(RegisterFile):
+#     def __init__(self, name, count, length=1, size=32):
+#         super().__init__(name, count, length, size)
+    
+#     def Read(self, idx):
+#         super.checkIdx(idx)
+#         return self.registers[idx][0]
+    
+#     def Write(self, idx, val):
+#         super.checkIdx(idx)
+#         self.registers[idx][0] = val
+
+
+# class VRF(RegisterFile):
+#     def __init__(self, name, count, length=1, size=32):
+#         super().__init__(name, count, length, size)
 
 
 class Core():

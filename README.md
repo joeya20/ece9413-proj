@@ -5,7 +5,7 @@
 ├── ECE-GY-9413 - Project Description - Functional Simulator.pdf # Project spec
 ├── README.md
 ├── run_tests.sh    # bash script to run all tests in ./tests
-├── skeleton.py     # simulator
+├── simulator.py    # simulator
 └── tests           # test directory
     ├── ISA_Sample  # sample test provided
     └── test1

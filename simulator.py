@@ -186,7 +186,7 @@ class Core():
     def ADDVV(self, vr1_idx, vr2_idx, vr3_idx):
         src1 = self.RFs['VRF'].Read(vr2_idx)
         src2 = self.RFs['VRF'].Read(vr3_idx)
-        res = self.RFs['VRF'].Read(vr1_idx)
+        res = self.RFs['VRF'].Read(vr1_idx)[:]
         
         # not sure if we can just write zeros?
         new_res = [src1[i] + src2[i] for i in range(self.len_reg)] + [res[i] for i in range(self.len_reg, 64)]
@@ -200,7 +200,7 @@ class Core():
     def SUBVV(self, vr1_idx, vr2_idx, vr3_idx):
         src1 = self.RFs['VRF'].Read(vr2_idx)
         src2 = self.RFs['VRF'].Read(vr3_idx)
-        res = self.RFs['VRF'].Read(vr1_idx)
+        res = self.RFs['VRF'].Read(vr1_idx)[:]  # create a copy of dst
         
         # Q: not sure if we can just write zeros?
         # Q: not sure of operand order?
@@ -213,7 +213,7 @@ class Core():
     def ADDVS(self, vr1_idx, vr2_idx, sr1_idx):
         sclr_src = self.RFs['SRF'].Read(sr1_idx)
         vtr_src = self.RFs['VRF'].Read(vr2_idx)
-        vtr_res = self.RFs['VRF'].Read(vr1_idx)
+        vtr_res = self.RFs['VRF'].Read(vr1_idx)[:]
         
         for i in range(self.len_reg):
             vtr_res[i] = vtr_src[i] + sclr_src
@@ -224,7 +224,7 @@ class Core():
     def SUBVS(self, vr1_idx, vr2_idx, sr1_idx):
         sclr_src = self.RFs['SRF'].Read(sr1_idx)
         vtr_src = self.RFs['VRF'].Read(vr2_idx)
-        vtr_res = self.RFs['VRF'].Read(vr1_idx)
+        vtr_res = self.RFs['VRF'].Read(vr1_idx)[:]
         
         # Q: double check operand order
         for i in range(self.len_reg):

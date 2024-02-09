@@ -1,5 +1,6 @@
 import os
 import argparse
+from enum import IntEnum
 
 
 class IMEM(object):
@@ -135,24 +136,6 @@ class RegisterFile(object):
             print("Exception: ", e)
 
 
-# class SRF(RegisterFile):
-#     def __init__(self, name, count, length=1, size=32):
-#         super().__init__(name, count, length, size)
-    
-#     def Read(self, idx):
-#         super.checkIdx(idx)
-#         return self.registers[idx][0]
-    
-#     def Write(self, idx, val):
-#         super.checkIdx(idx)
-#         self.registers[idx][0] = val
-
-
-# class VRF(RegisterFile):
-#     def __init__(self, name, count, length=1, size=32):
-#         super().__init__(name, count, length, size)
-
-
 class Core():
     def __init__(self, imem, sdmem, vdmem):
         self.IMEM = imem
@@ -161,8 +144,29 @@ class Core():
 
         self.RFs = {"SRF": RegisterFile("SRF", 8),
                     "VRF": RegisterFile("VRF", 8, 64)}
-
+        
         # Your code here.
+        self.mask_reg = 0x0
+        self.len_reg = 0x0
+        self.pc = 0x0
+        
+    class SCALAR_OP_TYPE(IntEnum):
+        ADD = 1
+        SUB = 2
+        AND = 3
+        OR  = 4
+        XOR = 5
+        SRL = 6
+        SLL = 7
+        SRA = 8
+
+    class BRANCH_TYPE(IntEnum):
+        EQ = 1
+        NE = 2
+        GT = 3
+        LT = 4
+        GE = 5
+        LE = 6
         
     def run(self):
         while (True):
@@ -171,6 +175,226 @@ class Core():
     def dumpregs(self, iodir):
         for rf in self.RFs.values():
             rf.dump(iodir)
+    
+    def update_len_reg(self, val):
+        if val < 0 or val >= 64:
+            raise ValueError('invalid length register val')
+        self.len_reg = val & 0xffff_ffff    # ensure it is 32-bits
+    
+    # Instruction 1
+    # Q: VR1 = VR2 + VR3 or VR1 = VR1 + VR2 + VR3
+    def ADDVV(self, vr1_idx, vr2_idx, vr3_idx):
+        src1 = self.RFs['VRF'].Read(vr2_idx)
+        src2 = self.RFs['VRF'].Read(vr3_idx)
+        res = self.RFs['VRF'].Read(vr1_idx)
+        
+        # not sure if we can just write zeros?
+        new_res = [src1[i] + src2[i] for i in range(self.len_reg)] + [res[i] for i in range(self.len_reg, 64)]
+        
+        if len(new_res) != 64:
+            raise Exception(f"vec len: {len(new_res)}")
+        
+        self.RFs['VRF'].Write(vr1_idx, new_res)
+    
+    # Instruction 1
+    def SUBVV(self, vr1_idx, vr2_idx, vr3_idx):
+        src1 = self.RFs['VRF'].Read(vr2_idx)
+        src2 = self.RFs['VRF'].Read(vr3_idx)
+        res = self.RFs['VRF'].Read(vr1_idx)
+        
+        # Q: not sure if we can just write zeros?
+        # Q: not sure of operand order?
+        for i in range(self.len_reg):
+            res[i] = src2[i] - src1[i]
+            
+        self.RFs['VRF'].Write(vr1_idx, res)
+    
+    # Instruction 2
+    def ADDVS(self, vr1_idx, vr2_idx, sr1_idx):
+        sclr_src = self.RFs['SRF'].Read(sr1_idx)
+        vtr_src = self.RFs['VRF'].Read(vr2_idx)
+        vtr_res = self.RFs['VRF'].Read(vr1_idx)
+        
+        for i in range(self.len_reg):
+            vtr_res[i] = vtr_src[i] + sclr_src
+        
+        self.RFs['VRF'].Write(vr1_idx, vtr_res)
+    
+    # Instruction 2
+    def SUBVS(self, vr1_idx, vr2_idx, sr1_idx):
+        sclr_src = self.RFs['SRF'].Read(sr1_idx)
+        vtr_src = self.RFs['VRF'].Read(vr2_idx)
+        vtr_res = self.RFs['VRF'].Read(vr1_idx)
+        
+        # Q: double check operand order
+        for i in range(self.len_reg):
+            vtr_res[i] = vtr_src[i] - sclr_src
+        
+        self.RFs['VRF'].Write(vr1_idx, vtr_res)
+    
+    # Instruction 3
+    def MULVV(self, vr1_idx, vr2_idx, sr1_idx):
+        pass
+    
+    # Instruction 3
+    def DIVVV(self, vr1_idx, vr2_idx, sr1_idx):
+        pass
+    
+    # Instruction 4
+    def MULVS(self, vr1_idx, vr2_idx, sr1_idx):
+        pass
+    
+    # Instruction 4
+    def DIVVS(self, vr1_idx, vr2_idx, sr1_idx):
+        pass
+    
+    # Vector Mask Operations
+    # Instruction 5
+    def S__VV(self, vr1_idx, vr2_idx):
+        pass
+    
+    # Instruction 6
+    def S__VS(self, vr1_idx, sr1_idx):
+        pass
+    
+    # Instruction 7
+    def CVM(self):
+        self.mask_reg = 0xffffffff_ffffffff
+        
+    # Instruction 8
+    def POP(self, sr1_idx):
+        pass
+    
+    # Vector Length Register Operations
+    # Instruction 9
+    def MTCL(self, idx):
+        self.update_len_reg(self.RFs['SRF'].Read(idx))
+        
+    # Instruction 10
+    def MFCL(self, idx):
+        self.RFs['SRF'].Write(idx, self.len_reg)
+    
+    # Memory Access Operations
+    # Instruction 11
+    def LV(self, vr1_idx, sr1_idx):
+        pass
+    
+    # Instruction 12
+    def SV(self, vr1_idx, sr1_idx):
+        pass
+    
+    # Instruction 13
+    def LVWS(self, vr1_idx, sr1_idx, sr2_idx):
+        pass
+    
+    # Instruction 14
+    def SVWS(self, vr1_idx, sr1_idx, sr2_idx):
+        pass
+    
+    # Instruction 15
+    def LVI(self, vr1_idx, sr1_idx, sr2_idx):
+        pass
+    
+    # Instruction 16
+    def SVI(self, vr1_idx, sr1_idx, sr2_idx):
+        pass
+    
+    # Instruction 17
+    def LS(self, sr1_idx, sr2_idx, imm):
+        pass
+    
+    # Instruction 18
+    def SS(self, sr1_idx, sr2_idx, imm):
+        pass
+    
+    # Scalar Operations
+    # Instructions 19 to 22
+    def scalar_op(self, sr3_idx, sr1_idx, sr2_idx, op):
+        src1 = self.RFs['SRF'].Read(sr1_idx)
+        src2 = self.RFs['SRF'].Read(sr2_idx)
+        match op:
+            case self.SCALAR_OP_TYPE.ADD:
+                self.RFs['SRF'].Write(sr3_idx, src1 + src2)
+            case self.SCALAR_OP_TYPE.SUB:
+                self.RFs['SRF'].Write(sr3_idx, src1 - src2)
+            case self.SCALAR_OP_TYPE.AND:
+                self.RFs['SRF'].Write(sr3_idx, src1 & src2)
+            case self.SCALAR_OP_TYPE.OR:
+                self.RFs['SRF'].Write(sr3_idx, src1 | src2)
+            case self.SCALAR_OP_TYPE.XOR:
+                self.RFs['SRF'].Write(sr3_idx, src1 ^ src2)
+            case self.SCALAR_OP_TYPE.SRL:
+                self.RFs['SRF'].Write(sr3_idx, src1 >> src2)
+            case self.SCALAR_OP_TYPE.SLL:
+                self.RFs['SRF'].Write(sr3_idx, src1 << src2)
+            case self.SCALAR_OP_TYPE.SRA:
+                pass    # TODO
+            case _:
+                raise ValueError('invalid scalar op enum')
+    
+    # def ADD(self, sr3_idx, sr1_idx, sr2_idx):
+    #     src1 = self.RFs['SRF'].Read(sr1_idx)
+    #     src2 = self.RFs['SRF'].Read(sr2_idx)
+    #     self.RFs['SRF'].Write(sr3_idx, src1 + src2)
+    
+    # def SUB(self, sr3_idx, sr1_idx, sr2_idx):
+    #     src1 = self.RFs['SRF'].Read(sr1_idx)
+    #     src2 = self.RFs['SRF'].Read(sr2_idx)
+    #     self.RFs['SRF'].Write(sr3_idx, src1 - src2)
+    
+    # def AND(self, sr3_idx, sr1_idx, sr2_idx):
+    #     src1 = self.RFs['SRF'].Read(sr1_idx)
+    #     src2 = self.RFs['SRF'].Read(sr2_idx)
+    #     self.RFs['SRF'].Write(sr3_idx, src1 + src2)
+        
+    # def OR(self, sr3_idx, sr1_idx, sr2_idx):
+    #     src1 = self.RFs['SRF'].Read(sr1_idx)
+    #     src2 = self.RFs['SRF'].Read(sr2_idx)
+    #     self.RFs['SRF'].Write(sr3_idx, src1 + src2)
+        
+    # def XOR(self, sr3_idx, sr1_idx, sr2_idx):
+    #     src1 = self.RFs['SRF'].Read(sr1_idx)
+    #     src2 = self.RFs['SRF'].Read(sr2_idx)
+    #     self.RFs['SRF'].Write(sr3_idx, src1 + src2)
+    
+    # def SLL(self, sr3_idx, sr1_idx, sr2_idx):
+    #     src1 = self.RFs['SRF'].Read(sr1_idx)
+    #     src2 = self.RFs['SRF'].Read(sr2_idx)
+    #     self.RFs['SRF'].Write(sr3_idx, src1 + src2)
+        
+    # def SRL(self, sr3_idx, sr1_idx, sr2_idx):
+    #     src1 = self.RFs['SRF'].Read(sr1_idx)
+    #     src2 = self.RFs['SRF'].Read(sr2_idx)
+    #     self.RFs['SRF'].Write(sr3_idx, src1 + src2)
+        
+    # def SRA(self, sr3_idx, sr1_idx, sr2_idx):
+    #     src1 = self.RFs['SRF'].Read(sr1_idx)
+    #     src2 = self.RFs['SRF'].Read(sr2_idx)
+    #     self.RFs['SRF'].Write(sr3_idx, src1 + src2)
+
+    # scalar branches
+    # Instruction 23
+    def branch(self, sr1_idx, sr2_idx, op, imm):
+        # src1 = self.RFs['SRF'].Read(sr1_idx)
+        # src2 = self.RFs['SRF'].Read(sr2_idx)
+        # match
+        pass
+    
+    # Instruction 24
+    def UNPACKLO(self, vr1_idx, vr2_idx, vr3_idx):
+        pass
+    
+    # Instruction 25
+    def UNPACKHI(self, vr1_idx, vr2_idx, vr3_idx):
+        pass
+    
+    # Instruction 26
+    def PACKLO(self, vr1_idx, vr2_idx, vr3_idx):
+        pass
+    
+    # Instruction 27
+    def PACKHI(self, vr1_idx, vr2_idx, vr3_idx):
+        pass
 
 
 if __name__ == "__main__":

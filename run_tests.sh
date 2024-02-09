@@ -3,5 +3,5 @@
 # for now we just print the command...
 for f in tests/* ; 
 do
-  echo \"python skeleton.py "$f"\"
+  echo \"python simulator.py "$f"\"
 done

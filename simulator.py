@@ -167,15 +167,22 @@ class Core():
         LT = 4
         GE = 5
         LE = 6
-        
+
     def run(self):
         while (True):
+            # TODO
+            # fetch
+            # execute
+            # match...
+                # case HALT:
+                #     break
+            # update pc
             break # Replace this line with your code.
 
     def dumpregs(self, iodir):
         for rf in self.RFs.values():
             rf.dump(iodir)
-    
+
     def update_len_reg(self, val):
         if val < 0 or val >= 64:
             raise ValueError('invalid length register val')
@@ -189,12 +196,10 @@ class Core():
         res = self.RFs['VRF'].Read(vr1_idx)[:]
         
         # not sure if we can just write zeros?
-        new_res = [src1[i] + src2[i] for i in range(self.len_reg)] + [res[i] for i in range(self.len_reg, 64)]
+        for i in range(self.len_reg):
+            res[i] = src2[i] + src1[i]
         
-        if len(new_res) != 64:
-            raise Exception(f"vec len: {len(new_res)}")
-        
-        self.RFs['VRF'].Write(vr1_idx, new_res)
+        self.RFs['VRF'].Write(vr1_idx, res)
     
     # Instruction 1
     def SUBVV(self, vr1_idx, vr2_idx, vr3_idx):
@@ -260,7 +265,7 @@ class Core():
     # Instruction 7
     def CVM(self):
         self.mask_reg = 0xffffffff_ffffffff
-        
+    
     # Instruction 8
     def POP(self, sr1_idx):
         pass

@@ -176,14 +176,125 @@ class Core():
 
     def run(self):
         while (True):
-            # TODO
-            # fetch
-            # execute
-            # match...
-            # case HALT:
-            #     break
-            # update pc
-            break # Replace this line with your code.
+            # fetch instruction
+            instr = self.IMEM.Read(self.pc)
+            
+            # decode and execute instruction
+            # we assume valid instructions...
+            decoded_instr = str(instr).split(' ')
+            match decoded_instr[0]:
+                case "ADDVV":
+                    self.___VV(decoded_instr[1], decoded_instr[2], decoded_instr[3], self.VECTOR_OP_TYPE.ADD)
+                case "SUBVV":
+                    self.___VV(decoded_instr[1], decoded_instr[2], decoded_instr[3], self.VECTOR_OP_TYPE.SUB)
+                case "ADDVS":
+                    self.___VS(decoded_instr[1], decoded_instr[2], decoded_instr[3], self.VECTOR_OP_TYPE.ADD)
+                case "SUBVS":
+                    self.___VS(decoded_instr[1], decoded_instr[2], decoded_instr[3], self.VECTOR_OP_TYPE.SUB)
+                case "MULVV":
+                    self.___VV(decoded_instr[1], decoded_instr[2], decoded_instr[3], self.VECTOR_OP_TYPE.MUL)
+                case "DIVVV":
+                    self.___VV(decoded_instr[1], decoded_instr[2], decoded_instr[3], self.VECTOR_OP_TYPE.DIV)
+                case "MULVS":
+                    self.___VS(decoded_instr[1], decoded_instr[2], decoded_instr[3], self.VECTOR_OP_TYPE.MUL)
+                case "DIVVS":
+                    self.___VS(decoded_instr[1], decoded_instr[2], decoded_instr[3], self.VECTOR_OP_TYPE.DIV)
+                case "SEQVV":
+                    self.S__VV(decoded_instr[1], decoded_instr[2], self.BRANCH_TYPE.EQ)
+                case "SNEVV":
+                    self.S__VV(decoded_instr[1], decoded_instr[2], self.BRANCH_TYPE.NE)
+                case "SGTVV":
+                    self.S__VV(decoded_instr[1], decoded_instr[2], self.BRANCH_TYPE.GT)
+                case "SLTVV":
+                    self.S__VV(decoded_instr[1], decoded_instr[2], self.BRANCH_TYPE.LT)
+                case "SGEVV":
+                    self.S__VV(decoded_instr[1], decoded_instr[2], self.BRANCH_TYPE.GE)
+                case "SLEVV":
+                    self.S__VV(decoded_instr[1], decoded_instr[2], self.BRANCH_TYPE.LE)
+                case "SEQVS":
+                    self.S__VS(decoded_instr[1], decoded_instr[2], self.BRANCH_TYPE.EQ)
+                case "SNEVS":
+                    self.S__VS(decoded_instr[1], decoded_instr[2], self.BRANCH_TYPE.NE)
+                case "SGTVS":
+                    self.S__VS(decoded_instr[1], decoded_instr[2], self.BRANCH_TYPE.GT)
+                case "SLTVS":
+                    self.S__VS(decoded_instr[1], decoded_instr[2], self.BRANCH_TYPE.LT)
+                case "SGEVS":
+                    self.S__VS(decoded_instr[1], decoded_instr[2], self.BRANCH_TYPE.GE)
+                case "SLEVS":
+                    self.S__VS(decoded_instr[1], decoded_instr[2], self.BRANCH_TYPE.LE)
+                case "CVM":
+                    self.CVM()
+                case "POP":
+                    self.POP(decoded_instr[1])
+                case "MTCL":
+                    self.MTCL(decoded_instr[1])
+                case "MFCL":
+                    self.MFCL(decoded_instr[1])
+                case "LV":
+                    self.LV(decoded_instr[1], decoded_instr[2])
+                case "SV":
+                    self.SV(decoded_instr[1], decoded_instr[2])
+                case "LVWS":
+                    self.LVWS(decoded_instr[1], decoded_instr[2], decoded_instr[3])
+                case "SVWS":
+                    self.SVWS(decoded_instr[1], decoded_instr[2], decoded_instr[3])
+                case "LVI":
+                    self.LVI(decoded_instr[1], decoded_instr[2], decoded_instr[3])
+                case "SVI":
+                    self.SVI(decoded_instr[1], decoded_instr[2], decoded_instr[3])
+                case "LS":
+                    self.LS(decoded_instr[1], decoded_instr[2], decoded_instr[3])
+                case "SS":
+                    self.SS(decoded_instr[1], decoded_instr[2], decoded_instr[3])
+                case "ADD":
+                    self.scalar_op(decoded_instr[1], decoded_instr[2], decoded_instr[3], self.SCALAR_OP_TYPE.ADD)
+                case "SUB":
+                    self.scalar_op(decoded_instr[1], decoded_instr[2], decoded_instr[3], self.SCALAR_OP_TYPE.SUB)
+                case "AND":
+                    self.scalar_op(decoded_instr[1], decoded_instr[2], decoded_instr[3], self.SCALAR_OP_TYPE.AND)
+                case "OR":
+                    self.scalar_op(decoded_instr[1], decoded_instr[2], decoded_instr[3], self.SCALAR_OP_TYPE.OR)
+                case "XOR":
+                    self.scalar_op(decoded_instr[1], decoded_instr[2], decoded_instr[3], self.SCALAR_OP_TYPE.XOR)
+                case "SLL":
+                    self.scalar_op(decoded_instr[1], decoded_instr[2], decoded_instr[3], self.SCALAR_OP_TYPE.SLL)
+                case "SRL":
+                    self.scalar_op(decoded_instr[1], decoded_instr[2], decoded_instr[3], self.SCALAR_OP_TYPE.SRL)
+                case "SRA":
+                    self.scalar_op(decoded_instr[1], decoded_instr[2], decoded_instr[3], self.SCALAR_OP_TYPE.SRA)
+                case "BEQ":
+                    self.branch(decoded_instr[1], decoded_instr[2], decoded_instr[3], self.BRANCH_TYPE.EQ)
+                    continue
+                case "BNE":
+                    self.branch(decoded_instr[1], decoded_instr[2], decoded_instr[3], self.BRANCH_TYPE.NE)
+                    continue
+                case "BGT":
+                    self.branch(decoded_instr[1], decoded_instr[2], decoded_instr[3], self.BRANCH_TYPE.GT)
+                    continue
+                case "BLT":
+                    self.branch(decoded_instr[1], decoded_instr[2], decoded_instr[3], self.BRANCH_TYPE.LT)
+                    continue
+                case "BGE":
+                    self.branch(decoded_instr[1], decoded_instr[2], decoded_instr[3], self.BRANCH_TYPE.GE)
+                    continue
+                case "BLE":
+                    self.branch(decoded_instr[1], decoded_instr[2], decoded_instr[3], self.BRANCH_TYPE.LE)
+                    continue
+                case "UNPACKLO":
+                    self.UNPACKLO(decoded_instr[1], decoded_instr[2], decoded_instr[3])
+                case "UNPACKHI":
+                    self.UNPACKHI(decoded_instr[1], decoded_instr[2], decoded_instr[3])
+                case "PACKLO":
+                    self.PACKLO(decoded_instr[1], decoded_instr[2], decoded_instr[3])
+                case "PACKHI":
+                    self.PACKHI(decoded_instr[1], decoded_instr[2], decoded_instr[3])
+                case "HALT":
+                    break
+            
+            # update PC
+            # skipped for branch instructions
+            self.pc += 1
 
     def dumpregs(self, iodir):
         for rf in self.RFs.values():
@@ -344,16 +455,16 @@ class Core():
             if curr % 2 != 0:
                 cnt += 1
             curr = curr >> 1
-        self.RFs['SRF'].Write(curr)
+        self.RFs['SRF'].Write(sr1_idx, cnt)
         
     # Vector Length Register Operations
     # Instruction 9
-    def MTCL(self, idx):
-        self.update_len_reg(self.RFs['SRF'].Read(idx))
+    def MTCL(self, sr1_idx):
+        self.update_len_reg(self.RFs['SRF'].Read(sr1_idx))
         
     # Instruction 10
-    def MFCL(self, idx):
-        self.RFs['SRF'].Write(idx, self.len_reg)
+    def MFCL(self, sr1_idx):
+        self.RFs['SRF'].Write(sr1_idx, self.len_reg)
     
     # Memory Access Operations
     # Instruction 11
@@ -369,23 +480,23 @@ class Core():
         pass
     
     # Instruction 14
-    def SVWS(self, vr1_idx, sr1_idx, sr2_idx):
+    def SVWS(self, vr1_idx, sr1_idx, vr2_idx):
         pass
     
     # Instruction 15
-    def LVI(self, vr1_idx, sr1_idx, sr2_idx):
+    def LVI(self, vr1_idx, sr1_idx, vr2_idx):
         pass
     
     # Instruction 16
-    def SVI(self, vr1_idx, sr1_idx, sr2_idx):
+    def SVI(self, vr1_idx, sr1_idx, vr2_idx):
         pass
     
     # Instruction 17
-    def LS(self, sr1_idx, sr2_idx, imm):
+    def LS(self, sr2_idx, sr1_idx, imm):
         pass
     
     # Instruction 18
-    def SS(self, sr1_idx, sr2_idx, imm):
+    def SS(self, sr2_idx, sr1_idx, imm):
         pass
     
     # Scalar Operations
@@ -415,11 +526,31 @@ class Core():
 
     # scalar branches
     # Instruction 23
-    def branch(self, sr1_idx, sr2_idx, op, imm):
-        # src1 = self.RFs['SRF'].Read(sr1_idx)
-        # src2 = self.RFs['SRF'].Read(sr2_idx)
-        # match
-        pass
+    def branch(self, sr1_idx, sr2_idx, imm, op):
+        src1 = self.RFs['SRF'].Read(sr1_idx)
+        src2 = self.RFs['SRF'].Read(sr2_idx)
+        
+        match op:
+            case self.BRANCH_TYPE.EQ:
+                if src1 == src2:
+                    pass
+            case self.BRANCH_TYPE.NE:
+                if src1 != src2:
+                    pass
+            case self.BRANCH_TYPE.GT:
+                if src1 > src2:
+                    pass
+            case self.BRANCH_TYPE.LT:
+                if src1 < src2:
+                    pass
+            case self.BRANCH_TYPE.GE:
+                if src1 >= src2:
+                    pass
+            case self.BRANCH_TYPE.LE:
+                if src1 <= src2:
+                    pass
+            case _:
+                raise ValueError("invalid vs branch type")
     
     # Instruction 24
     def UNPACKLO(self, vr1_idx, vr2_idx, vr3_idx):
@@ -463,5 +594,4 @@ if __name__ == "__main__":
 
     sdmem.dump()
     vdmem.dump()
-
     # THE END

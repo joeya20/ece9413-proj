@@ -22,7 +22,7 @@ class IMEM(object):
         if idx >= 0 and idx < self.size:
             return self.instructions[idx]
         else:
-            print("IMEM - ERROR: Invalid memory access at index: ", idx, " with memory size: ", self.size)
+            raise ValueError("IMEM - ERROR: Invalid memory access at index: ", idx, " with memory size: ", self.size)
 
 
 class DMEM(object):
@@ -92,34 +92,40 @@ class RegisterFile(object):
         self.max_value  = pow(2, self.reg_bits-1) - 1
         self.registers  = [[0x0 for e in range(self.vec_length)] for r in range(self.reg_count)] # list of lists of integers
 
-    def checkIdx(self, reg_name):
-        if str(reg_name).startswith("VR") or str(reg_name).startswith("SR"):
-            idx = int(reg_name[2:])
-            if idx < 0 or idx >= self.reg_count:
-                raise ValueError('invalid register name')
-    
-        raise ValueError('invalid register name')
+    def getIdx(self, reg_name):
+        if str(reg_name).startswith("VR") and self.name == "VRF":
+            raise ValueError('accessing incorrect register file type')
+        if str(reg_name).startswith("SR") and self.name == "SRF":
+            raise ValueError('accessing incorrect register file type')
+        if not (str(reg_name).startswith("SR") or str(reg_name).startswith("VR")):
+            raise ValueError('invalid register name')
+        
+        idx = int(reg_name[2:])
+        if idx < 0 or idx >= self.reg_count:
+            raise ValueError('invalid register index')
+
+        return idx
     
     # assuming that val is list for vector register
     # and any other type for scalar register
     def checkVal(self, val):
-        if type(val) is list:
+        if self.name == "VRF":
             for element in val:
                 if element < self.min_value or element > self.max_value:
                     raise ValueError('invalid register write value')
         else:
             if val < self.min_value or val > self.max_value:
                 raise ValueError('invalid register write value')
-        
+    
     def Read(self, idx):
-        idx = self.checkIdx(idx)
+        idx = self.getIdx(idx)
         if self.name == 'SRF':
             return self.registers[idx][0]
         else:
             return self.registers[idx]
 
     def Write(self, idx, val):
-        idx = self.checkIdx(idx)
+        idx = self.getIdx(idx)
         self.checkVal(val)
         if self.name == 'SRF':
             self.registers[idx][0] = val & 0xffff_ffff  # ensure it is 32-bits
@@ -308,57 +314,57 @@ class Core():
     def update_len_reg(self, val):
         if val < 0 or val >= self.MVL:
             raise ValueError('invalid length register val')
-        self.len_reg = val & 0xffff_ffff    # ensure it is 32-bits
-    
+        self.len_reg = val
+
     # Instruction 1 and 3
     def ___VV(self, vr1_idx, vr2_idx, vr3_idx, op):
-        src1 = self.RFs['VRF'].Read(vr2_idx)
-        src2 = self.RFs['VRF'].Read(vr3_idx)
-        res = self.RFs['VRF'].Read(vr1_idx)[:]
+        vr1 = self.RFs['VRF'].Read(vr1_idx)[:]
+        vr2 = self.RFs['VRF'].Read(vr2_idx)
+        vr3 = self.RFs['VRF'].Read(vr3_idx)
         
         # not sure if we can just write zeros?
         match op:
             case self.VECTOR_OP_TYPE.ADD:
                 for i in range(self.len_reg):
-                    res[i] = src2[i] + src1[i]
+                    vr1[i] = vr2[i] + vr3[i]
             case self.VECTOR_OP_TYPE.SUB:
                 for i in range(self.len_reg):
-                    res[i] = src1[i] - src2[i]
+                    vr1[i] = vr2[i] - vr3[i]
             case self.VECTOR_OP_TYPE.MUL:
                 for i in range(self.len_reg):
-                    res[i] = src1[i] * src2[i]
+                    vr1[i] = vr2[i] * vr3[i]
             case self.VECTOR_OP_TYPE.DIV:
                 for i in range(self.len_reg):
-                    res[i] = src1[i] / src2[i]
+                    vr1[i] = vr2[i] / vr3[i]
             case _:
                 raise ValueError("invalid VV op")
             
-        self.RFs['VRF'].Write(vr1_idx, res)
+        self.RFs['VRF'].Write(vr1_idx, vr1)
     
         # Instruction 1 and 3
     def ___VS(self, vr1_idx, vr2_idx, sr1_idx, op):
-        sclr_src = self.RFs['SRF'].Read(sr1_idx)
-        vtr_src = self.RFs['VRF'].Read(vr2_idx)
-        vtr_res = self.RFs['VRF'].Read(vr1_idx)[:]
+        vr1 = self.RFs['VRF'].Read(vr1_idx)[:]
+        vr2 = self.RFs['VRF'].Read(vr2_idx)
+        sr1 = self.RFs['SRF'].Read(sr1_idx)
         
         # not sure if we can just write zeros?
         match op:
             case self.VECTOR_OP_TYPE.ADD:
                 for i in range(self.len_reg):
-                    vtr_res[i] = vtr_src[i] + sclr_src
+                    vr1[i] = vr2[i] + sr1
             case self.VECTOR_OP_TYPE.SUB:
                 for i in range(self.len_reg):
-                    vtr_res[i] = vtr_src[i] - sclr_src
+                    vr1[i] = vr2[i] - sr1
             case self.VECTOR_OP_TYPE.MUL:
                 for i in range(self.len_reg):
-                    vtr_res[i] = vtr_src[i] * sclr_src
+                    vr1[i] = vr2[i] * sr1
             case self.VECTOR_OP_TYPE.DIV:
                 for i in range(self.len_reg):
-                    vtr_res[i] = vtr_src[i] / sclr_src
+                    vr1[i] = vr2[i] / sr1
             case _:
                 raise ValueError("invalid VS op")
         
-        self.RFs['VRF'].Write(vr1_idx, vtr_res)
+        self.RFs['VRF'].Write(vr1_idx, vr1)
     
     # Vector Mask Operations
     # Instruction 5
@@ -527,7 +533,7 @@ class Core():
             case self.SCALAR_OP_TYPE.SLL:
                 self.RFs['SRF'].Write(sr3_idx, src1 << src2)
             case self.SCALAR_OP_TYPE.SRA:
-                tmp = ((src1 >> src2) | (src1 << (32 - src2))) & 0xFFFFFFFF
+                tmp = ((src1 >> src2) | ((src1 << (32 - src2))) & 0xffff_ffff)
                 self.RFs['SRF'].Write(sr3_idx, tmp)
             case _:
                 raise ValueError('invalid scalar op enum')
@@ -570,7 +576,7 @@ class Core():
         vr1 = self.RFs['VRF'].Read(vr1_idx)[:]
         vr2 = self.RFs['VRF'].Read(vr2_idx)
         vr3 = self.RFs['VRF'].Read(vr3_idx)
-        
+
         for i in range(self.MVL/2):
             vr1[i*2] = vr2[i]
             vr1[i*2+1] = vr3[i]

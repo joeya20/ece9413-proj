@@ -92,9 +92,13 @@ class RegisterFile(object):
         self.max_value  = pow(2, self.reg_bits-1) - 1
         self.registers  = [[0x0 for e in range(self.vec_length)] for r in range(self.reg_count)] # list of lists of integers
 
-    def checkIdx(self, idx):
-        if idx < 0 or idx >= self.reg_count:
-            raise ValueError('invalid register index')
+    def checkIdx(self, reg_name):
+        if str(reg_name).startswith("VR") or str(reg_name).startswith("SR"):
+            idx = int(reg_name[2:])
+            if idx < 0 or idx >= self.reg_count:
+                raise ValueError('invalid register name')
+    
+        raise ValueError('invalid register name')
     
     # assuming that val is list for vector register
     # and any other type for scalar register
@@ -108,19 +112,19 @@ class RegisterFile(object):
                 raise ValueError('invalid register write value')
         
     def Read(self, idx):
-        self.checkIdx(idx)
+        idx = self.checkIdx(idx)
         if self.name == 'SRF':
             return self.registers[idx][0]
         else:
             return self.registers[idx]
 
     def Write(self, idx, val):
-        self.checkIdx(idx)
+        idx = self.checkIdx(idx)
         self.checkVal(val)
         if self.name == 'SRF':
             self.registers[idx][0] = val & 0xffff_ffff  # ensure it is 32-bits
         else:
-            self.registers[idx] = val
+            self.registers[idx] = val & 0xffff_ffff  # ensure it is 32-bits
 
     def dump(self, iodir):
         opfilepath = os.path.abspath(os.path.join(iodir, self.name + ".txt"))
@@ -149,6 +153,7 @@ class Core():
         self.mask_reg = 0x0
         self.len_reg = 0x0
         self.pc = 0x0
+        self.MVL = 64
         
     class VECTOR_OP_TYPE(IntEnum):
         ADD = 1
@@ -301,7 +306,7 @@ class Core():
             rf.dump(iodir)
 
     def update_len_reg(self, val):
-        if val < 0 or val >= 64:
+        if val < 0 or val >= self.MVL:
             raise ValueError('invalid length register val')
         self.len_reg = val & 0xffff_ffff    # ensure it is 32-bits
     
@@ -493,10 +498,12 @@ class Core():
     
     # Instruction 17
     def LS(self, sr2_idx, sr1_idx, imm):
+        # need to cast imm to int
         pass
     
     # Instruction 18
     def SS(self, sr2_idx, sr1_idx, imm):
+        # need to cast imm to int
         pass
     
     # Scalar Operations
@@ -520,7 +527,8 @@ class Core():
             case self.SCALAR_OP_TYPE.SLL:
                 self.RFs['SRF'].Write(sr3_idx, src1 << src2)
             case self.SCALAR_OP_TYPE.SRA:
-                pass    # TODO
+                tmp = ((src1 >> src2) | (src1 << (32 - src2))) & 0xFFFFFFFF
+                self.RFs['SRF'].Write(sr3_idx, tmp)
             case _:
                 raise ValueError('invalid scalar op enum')
 
@@ -529,44 +537,80 @@ class Core():
     def branch(self, sr1_idx, sr2_idx, imm, op):
         src1 = self.RFs['SRF'].Read(sr1_idx)
         src2 = self.RFs['SRF'].Read(sr2_idx)
+        imm = int(imm)
+        
+        if imm > 2**20 or imm < -(2**20):
+            raise ValueError('invalid branch immediate')
         
         match op:
             case self.BRANCH_TYPE.EQ:
                 if src1 == src2:
-                    pass
+                    self.pc = self.pc + imm / 4
             case self.BRANCH_TYPE.NE:
                 if src1 != src2:
-                    pass
+                    self.pc = self.pc + imm / 4
             case self.BRANCH_TYPE.GT:
                 if src1 > src2:
-                    pass
+                    self.pc = self.pc + imm / 4
             case self.BRANCH_TYPE.LT:
                 if src1 < src2:
-                    pass
+                    self.pc = self.pc + imm / 4
             case self.BRANCH_TYPE.GE:
                 if src1 >= src2:
-                    pass
+                    self.pc = self.pc + imm / 4
             case self.BRANCH_TYPE.LE:
                 if src1 <= src2:
-                    pass
+                    self.pc = self.pc + imm / 4
             case _:
-                raise ValueError("invalid vs branch type")
+                raise ValueError("invalid branch type")
     
     # Instruction 24
     def UNPACKLO(self, vr1_idx, vr2_idx, vr3_idx):
-        pass
+        vr1 = self.RFs['VRF'].Read(vr1_idx)[:]
+        vr2 = self.RFs['VRF'].Read(vr2_idx)
+        vr3 = self.RFs['VRF'].Read(vr3_idx)
+        
+        for i in range(self.MVL/2):
+            vr1[i*2] = vr2[i]
+            vr1[i*2+1] = vr3[i]
+    
+        self.RFs['VRF'].Write(vr1_idx, vr1)
     
     # Instruction 25
     def UNPACKHI(self, vr1_idx, vr2_idx, vr3_idx):
-        pass
+        vr1 = self.RFs['VRF'].Read(vr1_idx)[:]
+        vr2 = self.RFs['VRF'].Read(vr2_idx)
+        vr3 = self.RFs['VRF'].Read(vr3_idx)
+        
+        for i in range(self.MVL/2):
+            vr1[i*2] = vr2[i + self.MVL/2]
+            vr1[i*2+1] = vr3[i + self.MVL/2]
+    
+        self.RFs['VRF'].Write(vr1_idx, vr1)
     
     # Instruction 26
     def PACKLO(self, vr1_idx, vr2_idx, vr3_idx):
-        pass
+        vr1 = self.RFs['VRF'].Read(vr1_idx)[:]
+        vr2 = self.RFs['VRF'].Read(vr2_idx)
+        vr3 = self.RFs['VRF'].Read(vr3_idx)
+        
+        for i in range(self.MVL/2):
+            vr1[i] = vr2[i*2]
+            vr1[i + self.MVL/2] = vr3[i*2]
+    
+        self.RFs['VRF'].Write(vr1_idx, vr1)
     
     # Instruction 27
     def PACKHI(self, vr1_idx, vr2_idx, vr3_idx):
-        pass
+        vr1 = self.RFs['VRF'].Read(vr1_idx)[:]
+        vr2 = self.RFs['VRF'].Read(vr2_idx)
+        vr3 = self.RFs['VRF'].Read(vr3_idx)
+        
+        for i in range(self.MVL/2):
+            vr1[i] = vr2[i*2 + 1]
+            vr1[i + self.MVL/2] = vr3[i*2 + 1]
+    
+        self.RFs['VRF'].Write(vr1_idx, vr1)
 
 
 if __name__ == "__main__":

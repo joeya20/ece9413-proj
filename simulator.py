@@ -542,6 +542,7 @@ class Core():
         if imm > 2**20 or imm < -(2**20):
             raise ValueError('invalid branch immediate')
         
+        # Q: do we consider an instruction 4 bytes (divide imm by 4)?
         match op:
             case self.BRANCH_TYPE.EQ:
                 if src1 == src2:

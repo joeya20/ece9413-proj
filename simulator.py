@@ -13,7 +13,6 @@ class IMEM(object):
             with open(self.filepath, 'r') as insf:
                 self.instructions = [ins.strip() for ins in insf.readlines()]
             print("IMEM - Instructions loaded from file:", self.filepath)
-            # print("IMEM - Instructions:", self.instructions)
         except Exception as e:
             print("IMEM - ERROR: Couldn't open file in path:", self.filepath)
             print("Exception: ", e)
@@ -52,9 +51,13 @@ class DMEM(object):
             raise ValueError('invalid DMEM index')
     
     def checkVal(self, val):
-        ''' checks if the value can be stored using a 32-bit register '''
-        if val < self.min_value or val > self.max_value:
-            raise ValueError('invalid register write value')
+        ''' reduces the length of val to 32-bits '''
+        if type(val) is list:
+            for i, element in enumerate(val):
+                val[i] = element & 0xffff_ffff
+        else:
+            val = val & 0xffff_ffff
+        return val
     
     # TODO: implement vector read later?
     def Read(self, idx): # Use this to read from DMEM.
@@ -72,7 +75,7 @@ class DMEM(object):
         this can only service word writes, not vector writes
         '''
         self.checkIdx(idx)
-        self.checkVal(val)
+        val = self.checkVal(val)
         self.data[idx] = val
 
     def dump(self):
@@ -125,12 +128,8 @@ class RegisterFile(object):
         if self.name == "VRF":
             for i, element in enumerate(val):
                 val[i] = element & 0xffff_ffff
-                # if element < self.min_value or element > self.max_value:
-                #     raise ValueError('invalid register write value')
         else:
             val = val & 0xffff_ffff
-            # if val < self.min_value or val > self.max_value:
-            #     raise ValueError('invalid register write value')
         return val
     
     def Read(self, idx):
@@ -184,7 +183,7 @@ class RegisterFile(object):
 
 
 class Core():
-    def __init__(self, imem, sdmem, vdmem):
+    def __init__(self, imem: IMEM, sdmem: DMEM, vdmem: DMEM):
         self.IMEM = imem
         self.SDMEM = sdmem
         self.VDMEM = vdmem
@@ -358,8 +357,6 @@ class Core():
 
     # Instruction 1 and 3
     def ___VV(self, vr1_idx, vr2_idx, vr3_idx, op):
-        # we make a copy
-        # vr1 = self.RFs['VRF'].Read(vr1_idx)[:]
         vr2 = self.RFs['VRF'].Read(vr2_idx)
         vr3 = self.RFs['VRF'].Read(vr3_idx)
         
@@ -367,7 +364,6 @@ class Core():
         match op:
             case self.VECTOR_OP_TYPE.ADD:
                 for i in range(self.len_reg):
-                    # vr1[i] = (vr2[i] + vr3[i])
                     self.RFs['VRF'].write_vec_element(vr1_idx, i, vr2[i] + vr3[i])
             case self.VECTOR_OP_TYPE.SUB:
                 for i in range(self.len_reg):
@@ -380,15 +376,12 @@ class Core():
                     self.RFs['VRF'].write_vec_element(vr1_idx, i, vr2[i] / vr3[i])
             case _:
                 raise ValueError("invalid VV op")
-        # self.RFs['VRF'].Write(vr1_idx, vr1)
     
         # Instruction 1 and 3
     def ___VS(self, vr1_idx, vr2_idx, sr1_idx, op):
-        # vr1 = self.RFs['VRF'].Read(vr1_idx)[:]
         vr2 = self.RFs['VRF'].Read(vr2_idx)
         sr1 = self.RFs['SRF'].Read(sr1_idx)
         
-        # not sure if we can just write zeros?
         match op:
             case self.VECTOR_OP_TYPE.ADD:
                 for i in range(self.len_reg):
@@ -405,8 +398,6 @@ class Core():
                     self.RFs['VRF'].write_vec_element(vr1_idx, i, vr2[i] / sr1)
             case _:
                 raise ValueError("invalid VS op")
-        
-        # self.RFs['VRF'].Write(vr1_idx, vr1)
     
     # Vector Mask Operations
     # Instruction 5
@@ -523,69 +514,72 @@ class Core():
     # Instruction 11
     def LV(self, vr1_idx, sr1_idx):
         sr1 = self.RFs['SRF'].Read(sr1_idx)
-        vdm = self.VDMEM.Read(sr1)
-        self.RFs['VRF'].Write(vr1_idx, vdm)
+        for i in range(self.len_reg):
+            val = self.VDMEM.Read(sr1 + i)
+            self.RFs['VRF'].write_vec_element(vr1_idx, i, val)
 
-    
     # Instruction 12
     def SV(self, vr1_idx, sr1_idx):
         vr1 = self.RFs['VRF'].Read(vr1_idx)
         sr1 = self.RFs['SRF'].Read(sr1_idx)
-        self.VDMEM.Write(sr1,vr1)
+        for i in range(self.len_reg):
+            self.VDMEM.Write(sr1+i, vr1[i])
         
-    
     # Instruction 13
+    # stride applies to both mem read and vrf write?
     def LVWS(self, vr1_idx, sr1_idx, sr2_idx):
         sr1 = self.RFs['SRF'].Read(sr1_idx)
         sr2 = self.RFs['SRF'].Read(sr2_idx)
-        vdm = self.VDMEM.Read(sr1+sr2)
-        self.RFs['VRF'].Write(vr1_idx, vdm)
+        for i in range(self.len_reg):
+            val = self.VDMEM.Read(sr1 + i * sr2)
+            self.RFs['VRF'].write_vec_element(vr1_idx, i, val)
         
-    
     # Instruction 14
-    def SVWS(self, vr1_idx, sr1_idx, vr2_idx):
+    def SVWS(self, vr1_idx, sr1_idx, sr2_idx):
+        vr1 = self.RFs['VRF'].Read(vr1_idx)
         sr1 = self.RFs['SRF'].Read(sr1_idx)
         sr2 = self.RFs['SRF'].Read(sr2_idx)
-        vdm = self.VDMEM.Read(sr1+sr2)
-        self.VDMEM.Write(sr1+sr2,vr1)
-        
+        for i in range(self.len_reg):
+            self.VDMEM.Write(sr1 + i*sr2, vr1[i])
     
     # Instruction 15
     def LVI(self, vr1_idx, sr1_idx, vr2_idx):
-        vr1 = self.RFs['VRF'].Read(vr1_idx)
         sr1 = self.RFs['SRF'].Read(sr1_idx)
         vr2 = self.RFs['VRF'].Read(vr2_idx)
-        vdm = self.VDMEM.Read(sr1)
+        
+        # vr1[i] = VDMEM[sr1 + vr2[i]]
         for i in range(self.len_reg):
-                    vr1[i] = vdm[i+vr2[i]]
-        self.RFs['VRF'].Write(vr1_idx, vr1)
+            val = self.VDMEM.Read(sr1 + vr2[i])
+            self.RFs['VRF'].write_vec_element(vr1_idx, i, val)
     
     # Instruction 16
     def SVI(self, vr1_idx, sr1_idx, vr2_idx):
         vr1 = self.RFs['VRF'].Read(vr1_idx)
         sr1 = self.RFs['SRF'].Read(sr1_idx)
         vr2 = self.RFs['VRF'].Read(vr2_idx)
-        vdm = self.VDMEM.Read(sr1)
+        
+        # VDMEM[sr1 + vr2[i]] = vr1[i]
         for i in range(self.len_reg):
-                    vdm[i+vr2[i]] = vr1[i]
-        self.VDMEM.Write(sr1,vdm)
+            self.VDMEM.Write(sr1 + vr2[i], vr1[i])
+    
     # Instruction 17
+    # sr2 = SDMEM[sr1+imm]
     def LS(self, sr2_idx, sr1_idx, imm):
         # need to cast imm to int
         imm = int(imm)
         sr1 = self.RFs['SRF'].Read(sr1_idx)
-        sr2 = self.RFs['SRF'].Read(sr2_idx)
-        sdm = self.SDMEM.Read(sr2+imm)
-        self.RFs['SRF'].Write(sr1_idx,sdm)
+        sdm = self.SDMEM.Read(sr1+imm)
+        self.RFs['SRF'].Write(sr2_idx, sdm)
     
     # Instruction 18
+    # SDMEM[sr1+imm] = sr2
     def SS(self, sr2_idx, sr1_idx, imm):
         # need to cast imm to int
         imm = int(imm)
         sr1 = self.RFs['SRF'].Read(sr1_idx)
-        sr2 = self.RFs['SRF'].Read(sr2_idx+sr1)
-        self.SDMEM.Write(sr1_idx,sdm)
-    
+        sr2 = self.RFs['SRF'].Read(sr2_idx)
+        self.SDMEM.Write(sr1+imm, sr2)
+
     # Scalar Operations
     # Instructions 19 to 22
     def scalar_op(self, sr3_idx, sr1_idx, sr2_idx, op):
@@ -626,80 +620,60 @@ class Core():
         match op:
             case self.BRANCH_TYPE.EQ:
                 if src1 == src2:
-                    self.pc = self.pc + imm / 4
+                    self.pc = self.pc + imm
             case self.BRANCH_TYPE.NE:
                 if src1 != src2:
-                    self.pc = self.pc + imm / 4
+                    self.pc = self.pc + imm
             case self.BRANCH_TYPE.GT:
                 if src1 > src2:
-                    self.pc = self.pc + imm / 4
+                    self.pc = self.pc + imm
             case self.BRANCH_TYPE.LT:
                 if src1 < src2:
-                    self.pc = self.pc + imm / 4
+                    self.pc = self.pc + imm
             case self.BRANCH_TYPE.GE:
                 if src1 >= src2:
-                    self.pc = self.pc + imm / 4
+                    self.pc = self.pc + imm
             case self.BRANCH_TYPE.LE:
                 if src1 <= src2:
-                    self.pc = self.pc + imm / 4
+                    self.pc = self.pc + imm
             case _:
                 raise ValueError("invalid branch type")
     
     # Instruction 24
     def UNPACKLO(self, vr1_idx, vr2_idx, vr3_idx):
-        # vr1 = self.RFs['VRF'].Read(vr1_idx)[:]
         vr2 = self.RFs['VRF'].Read(vr2_idx)
         vr3 = self.RFs['VRF'].Read(vr3_idx)
 
         for i in range(self.MVL/2):
-            # vr1[i*2] = vr2[i]
-            # vr1[i*2+1] = vr3[i]
             self.RFs['VRF'].write_vec_element(vr1_idx, i*2, vr2[i])
             self.RFs['VRF'].write_vec_element(vr1_idx, i*2+1, vr3[i])
     
-        # self.RFs['VRF'].Write(vr1_idx, vr1)
-    
     # Instruction 25
     def UNPACKHI(self, vr1_idx, vr2_idx, vr3_idx):
-        # vr1 = self.RFs['VRF'].Read(vr1_idx)[:]
         vr2 = self.RFs['VRF'].Read(vr2_idx)
         vr3 = self.RFs['VRF'].Read(vr3_idx)
         
         for i in range(self.MVL/2):
-            # vr1[i*2] = vr2[i + self.MVL/2]
-            # vr1[i*2+1] = vr3[i + self.MVL/2]
             self.RFs['VRF'].write_vec_element(vr1_idx, i*2, vr2[i + self.MVL/2])
             self.RFs['VRF'].write_vec_element(vr1_idx, i*2+1, vr3[i + self.MVL/2])
     
-        # self.RFs['VRF'].Write(vr1_idx, vr1)
-    
     # Instruction 26
     def PACKLO(self, vr1_idx, vr2_idx, vr3_idx):
-        # vr1 = self.RFs['VRF'].Read(vr1_idx)[:]
         vr2 = self.RFs['VRF'].Read(vr2_idx)
         vr3 = self.RFs['VRF'].Read(vr3_idx)
         
         for i in range(self.MVL/2):
-            # vr1[i] = vr2[i*2]
-            # vr1[i + self.MVL/2] = vr3[i*2]
             self.RFs['VRF'].write_vec_element(vr1_idx, i, vr2[i*2])
             self.RFs['VRF'].write_vec_element(vr1_idx, i + self.MVL/2, vr3[i*2])
     
-        # self.RFs['VRF'].Write(vr1_idx, vr1)
-    
     # Instruction 27
     def PACKHI(self, vr1_idx, vr2_idx, vr3_idx):
-        # vr1 = self.RFs['VRF'].Read(vr1_idx)[:]
         vr2 = self.RFs['VRF'].Read(vr2_idx)
         vr3 = self.RFs['VRF'].Read(vr3_idx)
 
         for i in range(self.MVL/2):
-            # vr1[i] = vr2[i*2 + 1]
-            # vr1[i + self.MVL/2] = vr3[i*2 + 1]
             self.RFs['VRF'].write_vec_element(vr1_idx, i, vr2[i*2 + 1])
             self.RFs['VRF'].write_vec_element(vr1_idx, i + self.MVL/2, vr3[i*2 + 1])
-
-        # self.RFs['VRF'].Write(vr1_idx, vr1)
 
 
 if __name__ == "__main__":

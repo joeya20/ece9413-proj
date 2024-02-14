@@ -522,37 +522,69 @@ class Core():
     # Memory Access Operations
     # Instruction 11
     def LV(self, vr1_idx, sr1_idx):
-        pass
+        sr1 = self.RFs['SRF'].Read(sr1_idx)
+        vdm = self.VDMEM.Read(sr1)
+        self.RFs['VRF'].Write(vr1_idx, vdm)
+
     
     # Instruction 12
     def SV(self, vr1_idx, sr1_idx):
-        pass
+        vr1 = self.RFs['VRF'].Read(vr1_idx)
+        sr1 = self.RFs['SRF'].Read(sr1_idx)
+        self.VDMEM.Write(sr1,vr1)
+        
     
     # Instruction 13
     def LVWS(self, vr1_idx, sr1_idx, sr2_idx):
-        pass
+        sr1 = self.RFs['SRF'].Read(sr1_idx)
+        sr2 = self.RFs['SRF'].Read(sr2_idx)
+        vdm = self.VDMEM.Read(sr1+sr2)
+        self.RFs['VRF'].Write(vr1_idx, vdm)
+        
     
     # Instruction 14
     def SVWS(self, vr1_idx, sr1_idx, vr2_idx):
-        pass
+        sr1 = self.RFs['SRF'].Read(sr1_idx)
+        sr2 = self.RFs['SRF'].Read(sr2_idx)
+        vdm = self.VDMEM.Read(sr1+sr2)
+        self.VDMEM.Write(sr1+sr2,vr1)
+        
     
     # Instruction 15
     def LVI(self, vr1_idx, sr1_idx, vr2_idx):
-        pass
+        vr1 = self.RFs['VRF'].Read(vr1_idx)
+        sr1 = self.RFs['SRF'].Read(sr1_idx)
+        vr2 = self.RFs['VRF'].Read(vr2_idx)
+        vdm = self.VDMEM.Read(sr1)
+        for i in range(self.len_reg):
+                    vr1[i] = vdm[i+vr2[i]]
+        self.RFs['VRF'].Write(vr1_idx, vr1)
     
     # Instruction 16
     def SVI(self, vr1_idx, sr1_idx, vr2_idx):
-        pass
-    
+        vr1 = self.RFs['VRF'].Read(vr1_idx)
+        sr1 = self.RFs['SRF'].Read(sr1_idx)
+        vr2 = self.RFs['VRF'].Read(vr2_idx)
+        vdm = self.VDMEM.Read(sr1)
+        for i in range(self.len_reg):
+                    vdm[i+vr2[i]] = vr1[i]
+        self.VDMEM.Write(sr1,vdm)
     # Instruction 17
     def LS(self, sr2_idx, sr1_idx, imm):
         # need to cast imm to int
-        pass
+        imm = int(imm)
+        sr1 = self.RFs['SRF'].Read(sr1_idx)
+        sr2 = self.RFs['SRF'].Read(sr2_idx)
+        sdm = self.SDMEM.Read(sr2+imm)
+        self.RFs['SRF'].Write(sr1_idx,sdm)
     
     # Instruction 18
     def SS(self, sr2_idx, sr1_idx, imm):
         # need to cast imm to int
-        pass
+        imm = int(imm)
+        sr1 = self.RFs['SRF'].Read(sr1_idx)
+        sr2 = self.RFs['SRF'].Read(sr2_idx+sr1)
+        self.SDMEM.Write(sr1_idx,sdm)
     
     # Scalar Operations
     # Instructions 19 to 22

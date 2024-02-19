@@ -66,7 +66,7 @@ class DMEM(object):
         this can only service word reads, not vector reads
         '''
         self.checkIdx(idx)
-        return self.instructions[idx]
+        return self.data[idx]
 
     # TODO: implement vector write later?
     def Write(self, idx, val): # Use this to write into DMEM.
@@ -108,9 +108,9 @@ class RegisterFile(object):
         converts a register name to its index inside of the register file
         and checks for invalid register names
         '''
-        if str(reg_name).startswith("VR") and self.name == "VRF":
+        if str(reg_name).startswith("VR") and self.name != "VRF":
             raise ValueError('accessing incorrect register file type')
-        if str(reg_name).startswith("SR") and self.name == "SRF":
+        if str(reg_name).startswith("SR") and self.name != "SRF":
             raise ValueError('accessing incorrect register file type')
         if not (str(reg_name).startswith("SR") or str(reg_name).startswith("VR")):
             raise ValueError('invalid register name')
@@ -125,7 +125,7 @@ class RegisterFile(object):
     # and int for scalar register
     def checkVal(self, val):
         ''' reduces the length of val to 32-bits '''
-        if self.name == "VRF":
+        if type(val) is list:
             for i, element in enumerate(val):
                 val[i] = element & 0xffff_ffff
         else:
@@ -160,11 +160,11 @@ class RegisterFile(object):
             self.registers[idx] = val
             
     def write_vec_element(self, idx, ele, val):
+        idx = self.getIdx(idx)
         if self.name == 'SRF':
             raise Exception()
         if ele >= len(self.registers[idx]):
             raise ValueError('element out of bounds')
-
         val = self.checkVal(val)
         self.registers[idx][ele] = val
         
@@ -193,8 +193,8 @@ class Core():
         
         # Your code here.
         self.mask_reg = 0x0
-        self.len_reg = 0x0
         self.pc = 0x0
+        self.len_reg = 64
         self.MVL = 64
     
     class VECTOR_OP_TYPE(IntEnum):
@@ -341,7 +341,8 @@ class Core():
                     self.PACKHI(decoded_instr[1], decoded_instr[2], decoded_instr[3])
                 case "HALT":
                     break
-            
+                case _:
+                    raise IOError('Invalid instruction')
             # update PC
             # skipped for branch instructions
             self.pc += 1

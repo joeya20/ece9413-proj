@@ -51,13 +51,13 @@ class DMEM(object):
             raise ValueError('invalid DMEM index')
     
     def checkVal(self, val):
-        ''' reduces the length of val to 32-bits '''
         if type(val) is list:
-            for i, element in enumerate(val):
-                val[i] = element & 0xffff_ffff
+            for element in val:
+                if element > self.max_value or element < self.min_value:
+                    raise ValueError('Value to write to DMEM is out of range')
         else:
-            val = val & 0xffff_ffff
-        return val
+            if val > self.max_value or val < self.min_value:
+                raise ValueError('Value to write to DMEM is out of range')
     
     # TODO: implement vector read later?
     def Read(self, idx): # Use this to read from DMEM.
@@ -75,7 +75,7 @@ class DMEM(object):
         this can only service word writes, not vector writes
         '''
         self.checkIdx(idx)
-        val = self.checkVal(val)
+        self.checkVal(val)
         self.data[idx] = val
 
     def dump(self):
@@ -124,13 +124,13 @@ class RegisterFile(object):
     # assuming that val is list for vector register
     # and int for scalar register
     def checkVal(self, val):
-        ''' reduces the length of val to 32-bits '''
         if type(val) is list:
-            for i, element in enumerate(val):
-                val[i] = element & 0xffff_ffff
+            for element in val:
+                if element > self.max_value or element < self.min_value:
+                    raise ValueError('Value to write to register is out of range')
         else:
-            val = val & 0xffff_ffff
-        return val
+            if val > self.max_value or val < self.min_value:
+                raise ValueError(f'Value to write to register is out of range {val}')
     
     def Read(self, idx):
         ''' returns the register at the provided index.
@@ -149,7 +149,7 @@ class RegisterFile(object):
         input validation is handled internally :)
         '''
         idx = self.getIdx(idx)
-        val = self.checkVal(val)
+        self.checkVal(val)
         if self.name == 'SRF':
             if type(val) is not int:
                 raise ValueError('expected type int for SRF write')
@@ -165,7 +165,7 @@ class RegisterFile(object):
             raise Exception()
         if ele >= len(self.registers[idx]):
             raise ValueError('element out of bounds')
-        val = self.checkVal(val)
+        self.checkVal(val)
         self.registers[idx][ele] = val
         
     def dump(self, iodir):
@@ -192,9 +192,9 @@ class Core():
                     "VRF": RegisterFile("VRF", 8, 64)}
         
         # Your code here.
-        self.mask_reg = [True for _ in range(self.MVL)]
         self.MVL = 64
         self.len_reg = self.MVL
+        self.mask_reg = [True for _ in range(self.MVL)]
         self.pc = 0
     
     class VECTOR_OP_TYPE(IntEnum):
@@ -342,7 +342,7 @@ class Core():
                 case "HALT":
                     break
                 case _:
-                    raise IOError('Invalid instruction')
+                    raise IOError(f'Invalid instruction: {decoded_instr[0]}')
             # update PC
             # skipped for branch instructions
             self.pc += 1
@@ -378,7 +378,7 @@ class Core():
             case self.VECTOR_OP_TYPE.DIV:
                 for i in range(self.len_reg):
                     if self.mask_reg[i]:
-                        self.RFs['VRF'].write_vec_element(vr1_idx, i, vr2[i] / vr3[i])
+                        self.RFs['VRF'].write_vec_element(vr1_idx, i, int(vr2[i] / vr3[i]))
             case _:
                 raise ValueError("invalid VV op")
     
@@ -418,7 +418,7 @@ class Core():
                     self.mask_reg[i] = vr1[i] == vr2[i]
             case self.BRANCH_TYPE.NE:
                 for i in range(self.len_reg):
-                    self.mask_reg[i] = [i] != vr2[i]
+                    self.mask_reg[i] = vr1[i] != vr2[i]
             case self.BRANCH_TYPE.GT:
                 for i in range(self.len_reg):
                     self.mask_reg[i] = vr1[i] > vr2[i]
@@ -445,7 +445,7 @@ class Core():
                     self.mask_reg[i] = vr1[i] == sr1
             case self.BRANCH_TYPE.NE:
                 for i in range(self.len_reg):
-                    self.mask_reg[i] = [i] != sr1
+                    self.mask_reg[i] = vr1[i] != sr1
             case self.BRANCH_TYPE.GT:
                 for i in range(self.len_reg):
                     self.mask_reg[i] = vr1[i] > sr1
@@ -573,12 +573,11 @@ class Core():
             case self.SCALAR_OP_TYPE.XOR:
                 self.RFs['SRF'].Write(sr3_idx, src1 ^ src2)
             case self.SCALAR_OP_TYPE.SRL:
-                self.RFs['SRF'].Write(sr3_idx, src1 >> src2)
+                self.RFs['SRF'].Write(sr3_idx, (src1 & 0xffff_ffff) >> src2)
             case self.SCALAR_OP_TYPE.SLL:
                 self.RFs['SRF'].Write(sr3_idx, src1 << src2)
             case self.SCALAR_OP_TYPE.SRA:
-                tmp = ((src1 >> src2) | ((src1 << (32 - src2)) & 0xffff_ffff))
-                self.RFs['SRF'].Write(sr3_idx, tmp)
+                self.RFs['SRF'].Write(sr3_idx, src1 >> src2)
             case _:
                 raise ValueError('invalid scalar op enum')
 

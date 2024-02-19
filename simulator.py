@@ -192,10 +192,10 @@ class Core():
                     "VRF": RegisterFile("VRF", 8, 64)}
         
         # Your code here.
-        self.mask_reg = 0x0
-        self.len_reg = 0x0
-        self.pc = 0x0
+        self.mask_reg = [True for _ in range(self.MVL)]
         self.MVL = 64
+        self.len_reg = self.MVL
+        self.pc = 0
     
     class VECTOR_OP_TYPE(IntEnum):
         ''' enum for vector arithmetic operations '''
@@ -364,16 +364,20 @@ class Core():
         match op:
             case self.VECTOR_OP_TYPE.ADD:
                 for i in range(self.len_reg):
-                    self.RFs['VRF'].write_vec_element(vr1_idx, i, vr2[i] + vr3[i])
+                    if self.mask_reg[i]:
+                        self.RFs['VRF'].write_vec_element(vr1_idx, i, vr2[i] + vr3[i])
             case self.VECTOR_OP_TYPE.SUB:
                 for i in range(self.len_reg):
-                    self.RFs['VRF'].write_vec_element(vr1_idx, i, vr2[i] - vr3[i])
+                    if self.mask_reg[i]:
+                        self.RFs['VRF'].write_vec_element(vr1_idx, i, vr2[i] - vr3[i])
             case self.VECTOR_OP_TYPE.MUL:
                 for i in range(self.len_reg):
-                    self.RFs['VRF'].write_vec_element(vr1_idx, i, vr2[i] * vr3[i])
+                    if self.mask_reg[i]:
+                        self.RFs['VRF'].write_vec_element(vr1_idx, i, vr2[i] * vr3[i])
             case self.VECTOR_OP_TYPE.DIV:
                 for i in range(self.len_reg):
-                    self.RFs['VRF'].write_vec_element(vr1_idx, i, vr2[i] / vr3[i])
+                    if self.mask_reg[i]:
+                        self.RFs['VRF'].write_vec_element(vr1_idx, i, vr2[i] / vr3[i])
             case _:
                 raise ValueError("invalid VV op")
     
@@ -385,122 +389,88 @@ class Core():
         match op:
             case self.VECTOR_OP_TYPE.ADD:
                 for i in range(self.len_reg):
-                    self.RFs['VRF'].write_vec_element(vr1_idx, i, vr2[i] + sr1)
-                    # vr1[i] = vr2[i] + sr1
+                    if self.mask_reg[i]:
+                        self.RFs['VRF'].write_vec_element(vr1_idx, i, vr2[i] + sr1)
             case self.VECTOR_OP_TYPE.SUB:
                 for i in range(self.len_reg):
-                    self.RFs['VRF'].write_vec_element(vr1_idx, i, vr2[i] - sr1)
+                    if self.mask_reg[i]:
+                        self.RFs['VRF'].write_vec_element(vr1_idx, i, vr2[i] - sr1)
             case self.VECTOR_OP_TYPE.MUL:
                 for i in range(self.len_reg):
                     self.RFs['VRF'].write_vec_element(vr1_idx, i, vr2[i] * sr1)
             case self.VECTOR_OP_TYPE.DIV:
                 for i in range(self.len_reg):
-                    self.RFs['VRF'].write_vec_element(vr1_idx, i, vr2[i] / sr1)
+                    if self.mask_reg[i]:
+                        self.RFs['VRF'].write_vec_element(vr1_idx, i, vr2[i] / sr1)
             case _:
                 raise ValueError("invalid VS op")
     
     # Vector Mask Operations
     # Instruction 5
     def S__VV(self, vr1_idx, vr2_idx, op):
-        mask = 1
         vr1 = self.RFs['VRF'].Read(vr1_idx)
         vr2 = self.RFs['VRF'].Read(vr2_idx)
-        mask_reg = 0
-        if len(vr1) != len(vr2):
-            raise ValueError("invalid vector length")
         
         match op:
             case self.BRANCH_TYPE.EQ:
-                for i in enumerate(vr1):
-                    if vr1[i] == vr2[i]:
-                        mask_reg |= mask
-                    mask = mask << 1
+                for i in range(self.len_reg):
+                    self.mask_reg[i] = vr1[i] == vr2[i]
             case self.BRANCH_TYPE.NE:
-                for i in enumerate(vr1):
-                    if vr1[i] != vr2[i]:
-                        mask_reg |= mask
-                    mask = mask << 1
+                for i in range(self.len_reg):
+                    self.mask_reg[i] = [i] != vr2[i]
             case self.BRANCH_TYPE.GT:
-                for i in enumerate(vr1):
-                    if vr1[i] > vr2[i]:
-                        mask_reg |= mask
-                    mask = mask << 1
+                for i in range(self.len_reg):
+                    self.mask_reg[i] = vr1[i] > vr2[i]
             case self.BRANCH_TYPE.LT:
-                for i in enumerate(vr1):
-                    if vr1[i] < vr2[i]:
-                        mask_reg |= mask
-                    mask = mask << 1
+                for i in range(self.len_reg):
+                    self.mask_reg[i] = vr1[i] < vr2[i]
             case self.BRANCH_TYPE.GE:
-                for i in enumerate(vr1):
-                    if vr1[i] >= vr2[i]:
-                        mask_reg |= mask
-                    mask = mask << 1
+                for i in range(self.len_reg):
+                    self.mask_reg[i] = vr1[i] >= vr2[i]
             case self.BRANCH_TYPE.LE:
-                for i in enumerate(vr1):
-                    if vr1[i] <= vr2[i]:
-                        mask_reg |= mask
-                    mask = mask << 1
+                for i in range(self.len_reg):
+                    self.mask_reg[i] = vr1[i] <= vr2[i]
             case _:
                 raise ValueError("invalid vv branch type")
-        self.mask_reg = mask_reg
 
     # Instruction 6
     def S__VS(self, vr1_idx, sr1_idx, op):
-        mask = 1
         vr1 = self.RFs['VRF'].Read(vr1_idx)
         sr1 = self.RFs['SRF'].Read(sr1_idx)
-        mask_reg = 0
         
         match op:
             case self.BRANCH_TYPE.EQ:
-                for i in enumerate(vr1):
-                    if vr1[i] == sr1:
-                        mask_reg |= mask
-                    mask = mask << 1
+                for i in range(self.len_reg):
+                    self.mask_reg[i] = vr1[i] == sr1
             case self.BRANCH_TYPE.NE:
-                for i in enumerate(vr1):
-                    if vr1[i] != sr1:
-                        mask_reg |= mask
-                    mask = mask << 1
+                for i in range(self.len_reg):
+                    self.mask_reg[i] = [i] != sr1
             case self.BRANCH_TYPE.GT:
-                for i in enumerate(vr1):
-                    if vr1[i] > sr1:
-                        mask_reg |= mask
-                    mask = mask << 1
+                for i in range(self.len_reg):
+                    self.mask_reg[i] = vr1[i] > sr1
             case self.BRANCH_TYPE.LT:
-                for i in enumerate(vr1):
-                    if vr1[i] < sr1:
-                        mask_reg |= mask
-                    mask = mask << 1
+                for i in range(self.len_reg):
+                    self.mask_reg[i] = vr1[i] < sr1
             case self.BRANCH_TYPE.GE:
-                for i in enumerate(vr1):
-                    if vr1[i] >= sr1:
-                        mask_reg |= mask
-                    mask = mask << 1
+                for i in range(self.len_reg):
+                    self.mask_reg[i] = vr1[i] >= sr1
             case self.BRANCH_TYPE.LE:
-                for i in enumerate(vr1):
-                    if vr1[i] <= sr1:
-                        mask_reg |= mask
-                    mask = mask << 1
+                for i in range(self.len_reg):
+                    self.mask_reg[i] = vr1[i] <= sr1
             case _:
                 raise ValueError("invalid vs branch type")
-        self.mask_reg = mask_reg
     
     # Instruction 7
     def CVM(self):
-        self.mask_reg = 0xffffffff_ffffffff
+        self.mask_reg = [True for _ in range(self.MVL)]
     
     # Instruction 8
     def POP(self, sr1_idx):
         cnt = 0
-        curr = self.mask_reg
-        # check the lsb and shift left until all 64 bits have been checked
-        for _ in range(self.MVL):
-            if curr % 2 != 0:
-                cnt += 1
-            curr = curr >> 1
+        for mask_bit in self.mask_reg:
+            cnt += int(mask_bit)
         self.RFs['SRF'].Write(sr1_idx, cnt)
-        
+    
     # Vector Length Register Operations
     # Instruction 9
     def MTCL(self, sr1_idx):
@@ -515,15 +485,17 @@ class Core():
     def LV(self, vr1_idx, sr1_idx):
         sr1 = self.RFs['SRF'].Read(sr1_idx)
         for i in range(self.len_reg):
-            val = self.VDMEM.Read(sr1 + i)
-            self.RFs['VRF'].write_vec_element(vr1_idx, i, val)
+            if self.mask_reg[i]:
+                val = self.VDMEM.Read(sr1 + i)
+                self.RFs['VRF'].write_vec_element(vr1_idx, i, val)
 
     # Instruction 12
     def SV(self, vr1_idx, sr1_idx):
         vr1 = self.RFs['VRF'].Read(vr1_idx)
         sr1 = self.RFs['SRF'].Read(sr1_idx)
         for i in range(self.len_reg):
-            self.VDMEM.Write(sr1+i, vr1[i])
+            if self.mask_reg[i]:
+                self.VDMEM.Write(sr1+i, vr1[i])
         
     # Instruction 13
     # stride applies to both mem read and vrf write?
@@ -531,26 +503,28 @@ class Core():
         sr1 = self.RFs['SRF'].Read(sr1_idx)
         sr2 = self.RFs['SRF'].Read(sr2_idx)
         for i in range(self.len_reg):
-            val = self.VDMEM.Read(sr1 + i * sr2)
-            self.RFs['VRF'].write_vec_element(vr1_idx, i, val)
-        
+            if self.mask_reg[i]:
+                val = self.VDMEM.Read(sr1 + i * sr2)
+                self.RFs['VRF'].write_vec_element(vr1_idx, i, val)
+            
     # Instruction 14
     def SVWS(self, vr1_idx, sr1_idx, sr2_idx):
         vr1 = self.RFs['VRF'].Read(vr1_idx)
         sr1 = self.RFs['SRF'].Read(sr1_idx)
         sr2 = self.RFs['SRF'].Read(sr2_idx)
         for i in range(self.len_reg):
-            self.VDMEM.Write(sr1 + i*sr2, vr1[i])
+            if self.mask_reg[i]:
+                self.VDMEM.Write(sr1 + i*sr2, vr1[i])
     
     # Instruction 15
     def LVI(self, vr1_idx, sr1_idx, vr2_idx):
         sr1 = self.RFs['SRF'].Read(sr1_idx)
         vr2 = self.RFs['VRF'].Read(vr2_idx)
         
-        # vr1[i] = VDMEM[sr1 + vr2[i]]
         for i in range(self.len_reg):
-            val = self.VDMEM.Read(sr1 + vr2[i])
-            self.RFs['VRF'].write_vec_element(vr1_idx, i, val)
+            if self.mask_reg[i]:
+                val = self.VDMEM.Read(sr1 + vr2[i])
+                self.RFs['VRF'].write_vec_element(vr1_idx, i, val)
     
     # Instruction 16
     def SVI(self, vr1_idx, sr1_idx, vr2_idx):
@@ -560,7 +534,8 @@ class Core():
         
         # VDMEM[sr1 + vr2[i]] = vr1[i]
         for i in range(self.len_reg):
-            self.VDMEM.Write(sr1 + vr2[i], vr1[i])
+            if self.mask_reg[i]:
+                self.VDMEM.Write(sr1 + vr2[i], vr1[i])
     
     # Instruction 17
     # sr2 = SDMEM[sr1+imm]
@@ -644,7 +619,7 @@ class Core():
         vr2 = self.RFs['VRF'].Read(vr2_idx)
         vr3 = self.RFs['VRF'].Read(vr3_idx)
 
-        for i in range(self.MVL/2):
+        for i in range(self.len_reg/2):
             self.RFs['VRF'].write_vec_element(vr1_idx, i*2, vr2[i])
             self.RFs['VRF'].write_vec_element(vr1_idx, i*2+1, vr3[i])
     

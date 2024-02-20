@@ -33,7 +33,7 @@ class DMEM(object):
         self.max_value  = pow(2, 31) - 1
         self.ipfilepath = os.path.abspath(os.path.join(iodir, name + ".txt"))
         self.opfilepath = os.path.abspath(os.path.join(iodir, name + "OP.txt"))
-        self.data = []
+        self.data = [0 for _ in range(self.size)]
 
         try:
             with open(self.ipfilepath, 'r') as ipf:
@@ -155,8 +155,8 @@ class RegisterFile(object):
                 raise ValueError('expected type int for SRF write')
             self.registers[idx][0] = val
         else:
-            if type(val) is not list:
-                raise ValueError('expected type list for VRF write')
+            if type(val) is not list or len(val) != 64:
+                raise ValueError('expected type list with length 64 for VRF write')
             self.registers[idx] = val
             
     def write_vec_element(self, idx, ele, val):
@@ -352,7 +352,7 @@ class Core():
             rf.dump(iodir)
 
     def update_len_reg(self, val):
-        if val < 0 or val >= self.MVL:
+        if val < 0 or val > self.MVL:
             raise ValueError('invalid length register val')
         self.len_reg = val
 
@@ -402,7 +402,7 @@ class Core():
             case self.VECTOR_OP_TYPE.DIV:
                 for i in range(self.len_reg):
                     if self.mask_reg[i]:
-                        self.RFs['VRF'].write_vec_element(vr1_idx, i, vr2[i] / sr1)
+                        self.RFs['VRF'].write_vec_element(vr1_idx, i, int(vr2[i] / sr1))
             case _:
                 raise ValueError("invalid VS op")
     
@@ -587,15 +587,17 @@ class Core():
         src1 = self.RFs['SRF'].Read(sr1_idx)
         src2 = self.RFs['SRF'].Read(sr2_idx)
         imm = int(imm)
+        old_pc = self.pc
         
         if imm > 2**20 or imm < -(2**20):
             raise ValueError('invalid branch immediate')
         
-        # Q: do we consider an instruction 4 bytes (divide imm by 4)?
         match op:
             case self.BRANCH_TYPE.EQ:
                 if src1 == src2:
                     self.pc = self.pc + imm
+                    print('new pc:', self.pc)
+                    print('new instr:', self.IMEM.instructions[self.pc])
             case self.BRANCH_TYPE.NE:
                 if src1 != src2:
                     self.pc = self.pc + imm
@@ -613,42 +615,56 @@ class Core():
                     self.pc = self.pc + imm
             case _:
                 raise ValueError("invalid branch type")
-    
+            
+        # if branch not taken, increment pc
+        if self.pc == old_pc:
+            self.pc += 1
+        
     # Instruction 24
     def UNPACKLO(self, vr1_idx, vr2_idx, vr3_idx):
         vr2 = self.RFs['VRF'].Read(vr2_idx)
         vr3 = self.RFs['VRF'].Read(vr3_idx)
 
-        for i in range(self.len_reg/2):
+        # this works for even numbers
+        for i in range(self.len_reg//2):
             self.RFs['VRF'].write_vec_element(vr1_idx, i*2, vr2[i])
             self.RFs['VRF'].write_vec_element(vr1_idx, i*2+1, vr3[i])
-    
+        
+        # for odd numbers, we need to update the last element to vr2[i]
+        if self.len_reg % 2 != 0:
+            i = self.len_reg//2
+            self.RFs['VRF'].write_vec_element(vr1_idx, i*2, vr2[i])
+             
     # Instruction 25
     def UNPACKHI(self, vr1_idx, vr2_idx, vr3_idx):
         vr2 = self.RFs['VRF'].Read(vr2_idx)
         vr3 = self.RFs['VRF'].Read(vr3_idx)
         
-        for i in range(self.MVL/2):
-            self.RFs['VRF'].write_vec_element(vr1_idx, i*2, vr2[i + self.MVL/2])
-            self.RFs['VRF'].write_vec_element(vr1_idx, i*2+1, vr3[i + self.MVL/2])
+        for i in range(self.len_reg//2):
+            self.RFs['VRF'].write_vec_element(vr1_idx, i*2, vr2[i + self.MVL//2])
+            self.RFs['VRF'].write_vec_element(vr1_idx, i*2+1, vr3[i + self.MVL//2])
+    
+        if self.len_reg % 2 != 0:
+            i = self.len_reg//2
+            self.RFs['VRF'].write_vec_element(vr1_idx, i*2, vr2[i + self.MVL//2])
     
     # Instruction 26
     def PACKLO(self, vr1_idx, vr2_idx, vr3_idx):
         vr2 = self.RFs['VRF'].Read(vr2_idx)
         vr3 = self.RFs['VRF'].Read(vr3_idx)
         
-        for i in range(self.MVL/2):
+        for i in range(self.len_reg//2):
             self.RFs['VRF'].write_vec_element(vr1_idx, i, vr2[i*2])
-            self.RFs['VRF'].write_vec_element(vr1_idx, i + self.MVL/2, vr3[i*2])
+            self.RFs['VRF'].write_vec_element(vr1_idx, i + self.MVL//2, vr3[i*2])
     
     # Instruction 27
     def PACKHI(self, vr1_idx, vr2_idx, vr3_idx):
         vr2 = self.RFs['VRF'].Read(vr2_idx)
         vr3 = self.RFs['VRF'].Read(vr3_idx)
 
-        for i in range(self.MVL/2):
+        for i in range(self.len_reg//2):
             self.RFs['VRF'].write_vec_element(vr1_idx, i, vr2[i*2 + 1])
-            self.RFs['VRF'].write_vec_element(vr1_idx, i + self.MVL/2, vr3[i*2 + 1])
+            self.RFs['VRF'].write_vec_element(vr1_idx, i + self.MVL//2, vr3[i*2 + 1])
 
 
 if __name__ == "__main__":

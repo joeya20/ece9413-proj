@@ -20,7 +20,7 @@ class TestCore(unittest.TestCase):
             pass
         
         self.core = Core(IMEM(self.tmpdir.name), DMEM('SDMEM', self.tmpdir.name, 13), DMEM("VDMEM", self.tmpdir.name, 17))
-        
+
     def tearDown(self):
         self.tmpdir.cleanup()
 
@@ -86,7 +86,7 @@ class TestCore(unittest.TestCase):
         self.core.RFs['SRF'].registers[1] = [2]
         self.core.run()
         
-        self.assertEqual([i / 2 for i in range(64)], self.core.RFs['VRF'].registers[2])
+        self.assertEqual([i // 2 for i in range(64)], self.core.RFs['VRF'].registers[2])
 
     def test_SEQVV(self):
         self.core.IMEM.instructions = ['SEQVV VR1 VR0', 'HALT']
@@ -197,7 +197,7 @@ class TestCore(unittest.TestCase):
         self.core.RFs['VRF'].registers[1] = [i for i in range(64)]
         self.core.RFs['SRF'].registers[1] = [32]
         self.core.run()
-        # VR1[0:31] = [0:31]
+        
         expected = ([False] * 32) + ([True] * 32)
         
         self.assertEqual(expected, self.core.mask_reg)
@@ -214,8 +214,8 @@ class TestCore(unittest.TestCase):
         self.core.RFs['SRF'].registers[1] = [32]
         self.core.run()
         
-        self.assertEqual([63], self.core.RFs['SRF'].registers[2])
-        self.assertEqual([64], self.core.RFs['SRF'].registers[3])
+        self.assertEqual(63, self.core.RFs['SRF'].Read('SR2'))
+        self.assertEqual(64, self.core.RFs['SRF'].Read('SR3'))
 
     def test_MTCL(self):
         self.core.IMEM.instructions = ['MTCL SR1', 'HALT']
@@ -230,6 +230,82 @@ class TestCore(unittest.TestCase):
         self.core.run()
         
         self.assertEqual(64, self.core.RFs['SRF'].Read('SR1'))
+    
+    def test_LV(self):
+        golden = [i for i in range(128)]
+        self.core.IMEM.instructions = ['LV VR1 SR1', 'HALT']
+        self.core.RFs['SRF'].Write('SR1', 32)
+        self.core.VDMEM.data = golden
+        self.core.run()
+
+        self.assertEqual(golden[32:96], self.core.RFs['VRF'].Read('VR1'))
+        
+    def test_SV(self):
+        golden = [i+1 for i in range(64)]
+        self.core.IMEM.instructions = ['SV VR1 SR1', 'HALT']
+        self.core.RFs['SRF'].Write('SR1', 32)
+        self.core.RFs['VRF'].Write('VR1', golden)
+        self.core.run()
+
+        self.assertEqual(golden, self.core.VDMEM.data[32:96])
+    
+    def test_LVWS(self):
+        golden = [i for i in range(128)]
+        self.core.IMEM.instructions = ['LVWS VR1 SR1 SR2', 'HALT']
+        self.core.RFs['SRF'].Write('SR1', 0)
+        self.core.RFs['SRF'].Write('SR2', 2)
+        self.core.VDMEM.data = golden
+        self.core.run()
+
+        self.assertEqual(golden[::2], self.core.RFs['VRF'].Read('VR1'))
+        
+    def test_SVWS(self):
+        golden = [i+1 for i in range(64)]
+        self.core.IMEM.instructions = ['SVWS VR1 SR1 SR2', 'HALT']
+        self.core.RFs['SRF'].Write('SR1', 0)
+        self.core.RFs['SRF'].Write('SR2', 2)
+        self.core.RFs['VRF'].Write('VR1', golden)
+        self.core.run()
+
+        self.assertEqual(golden, self.core.VDMEM.data[:128:2])
+    
+    def test_LVI(self):
+        golden = [i for i in range(512)]
+        offset = [i*3 for i in range(64)]
+        self.core.IMEM.instructions = ['LVI VR1 SR1 VR2', 'HALT']
+        self.core.RFs['SRF'].Write('SR1', 32)
+        self.core.RFs['VRF'].Write('VR2', offset)
+        self.core.VDMEM.data = golden
+        self.core.run()
+
+        self.assertEqual(golden[32:32+64*3:3], self.core.RFs['VRF'].Read('VR1'))
+    
+    def test_SVI(self):
+        golden = [i+1 for i in range(64)]
+        offset = [i*4 for i in range(64)]
+        self.core.IMEM.instructions = ['SVI VR1 SR1 VR2', 'HALT']
+        self.core.RFs['SRF'].Write('SR1', 32)
+        self.core.RFs['VRF'].Write('VR1', golden)
+        self.core.RFs['VRF'].Write('VR2', offset)
+        self.core.run()
+
+        self.assertEqual(golden, self.core.VDMEM.data[32:64*4+32:4])
+    
+    def test_LS(self):
+        self.core.IMEM.instructions = ['LS SR1 SR2 10', 'HALT']
+        self.core.RFs['SRF'].Write('SR2', 32)
+        self.core.SDMEM.data = [i for i in range(64)]
+        self.core.run()
+        
+        self.assertEqual(42, self.core.RFs['SRF'].Read('SR1'))
+    
+    def test_SS(self):
+        self.core.IMEM.instructions = ['SS SR1 SR2 10', 'HALT']
+        self.core.RFs['SRF'].Write('SR1', 100)
+        self.core.RFs['SRF'].Write('SR2', 32)
+        self.core.run()
+        
+        self.assertEqual(100, self.core.SDMEM.data[42])
     
     def test_ADD(self):
         self.core.IMEM.instructions = ['ADD SR3 SR2 SR1', 'HALT']
@@ -300,6 +376,109 @@ class TestCore(unittest.TestCase):
         
         self.assertEqual(-2147483648 / 2**1, self.core.RFs['SRF'].Read('SR4'))
         self.assertEqual(-2147483648 / 2**16, self.core.RFs['SRF'].Read('SR5'))
+        
+    def test_BEQ(self):
+        self.core.IMEM.instructions = ['BEQ SR1 SR2 2', 'POP SR3', 'BEQ SR1 SR3 2', 'POP SR4', 'HALT']
+        self.core.RFs['SRF'].Write('SR1', 32)
+        self.core.RFs['SRF'].Write('SR2', 32)
+        self.core.RFs['SRF'].Write('SR3', 10)
+        self.core.run()
+
+        self.assertEqual(self.core.RFs['SRF'].Read('SR3'), 10)
+        self.assertEqual(self.core.RFs['SRF'].Read('SR4'), 64)
+    
+    def test_BNE(self):
+        self.core.IMEM.instructions = ['BNE SR1 SR2 2', 'POP SR3', 'BNE SR1 SR3 2', 'POP SR4', 'HALT']
+        self.core.RFs['SRF'].Write('SR1', 32)
+        self.core.RFs['SRF'].Write('SR2', 32)
+        self.core.RFs['SRF'].Write('SR4', 10)
+        self.core.run()
+        
+        # check not taken
+        self.assertEqual(self.core.RFs['SRF'].Read('SR3'), 64)
+        # check taken
+        self.assertEqual(self.core.RFs['SRF'].Read('SR4'), 10)
+    
+    def test_BGT(self):
+        self.core.IMEM.instructions = ['BGT SR1 SR2 2', 'POP SR3', 'BGT SR2 SR1 2', 'POP SR4', 'HALT']
+        self.core.RFs['SRF'].Write('SR1', 32)
+        self.core.RFs['SRF'].Write('SR2', 42)
+        self.core.RFs['SRF'].Write('SR4', 10)
+        self.core.run()
+
+        # check not taken
+        self.assertEqual(self.core.RFs['SRF'].Read('SR3'), 64)
+        # check taken
+        self.assertEqual(self.core.RFs['SRF'].Read('SR4'), 10)
+    
+    def test_BLT(self):
+        self.core.IMEM.instructions = ['BLT SR1 SR2 2', 'POP SR3', 'BLT SR2 SR1 2', 'POP SR4', 'HALT']
+        self.core.RFs['SRF'].Write('SR1', 32)
+        self.core.RFs['SRF'].Write('SR2', 42)
+        self.core.RFs['SRF'].Write('SR3', 10)
+        self.core.run()
+        # check taken
+        self.assertEqual(self.core.RFs['SRF'].Read('SR3'), 10)
+        # check not taken
+        self.assertEqual(self.core.RFs['SRF'].Read('SR4'), 64)
+    
+    def test_BGE(self):
+        self.core.IMEM.instructions = ['BGE SR1 SR2 2', 'POP SR3', 'BGE SR3 SR1 2', 'POP SR4', 'BGE SR1 SR3 2', 'POP SR5', 'HALT']
+        self.core.RFs['SRF'].Write('SR1', 32)
+        self.core.RFs['SRF'].Write('SR2', 32)
+        self.core.RFs['SRF'].Write('SR3', 10)
+        self.core.RFs['SRF'].Write('SR4', 10)
+        self.core.RFs['SRF'].Write('SR5', 10)
+        self.core.run()
+
+        # check taken equals
+        self.assertEqual(self.core.RFs['SRF'].Read('SR3'), 10)
+        
+        # check not taken
+        self.assertEqual(self.core.RFs['SRF'].Read('SR4'), 64)
+        
+        # check taken greater than
+        self.assertEqual(self.core.RFs['SRF'].Read('SR5'), 10)
+    
+    def test_BLE(self):
+        self.core.IMEM.instructions = ['BLE SR1 SR2 2', 'POP SR3', 'BLE SR3 SR1 2', 'POP SR4', 'BLE SR1 SR3 2', 'POP SR5', 'HALT']
+        self.core.RFs['SRF'].Write('SR1', 32)
+        self.core.RFs['SRF'].Write('SR2', 32)
+        self.core.RFs['SRF'].Write('SR3', 10)
+        self.core.RFs['SRF'].Write('SR4', 10)
+        self.core.RFs['SRF'].Write('SR5', 10)
+        self.core.run()
+
+        # check taken equals
+        self.assertEqual(self.core.RFs['SRF'].Read('SR3'), 10)
+        
+        # check taken less than
+        self.assertEqual(self.core.RFs['SRF'].Read('SR4'), 10)
+        
+        # check not taken
+        self.assertEqual(self.core.RFs['SRF'].Read('SR5'), 64)
+
+    def test_UNPACKHI(self):
+        pass
+    
+    def test_UNPACKLO(self):
+        pass
+    
+    def test_PACKHI(self):
+        pass
+    
+    def test_PACKLO(self):
+        pass
+    
+    def test_LV_len_reg(self):
+        golden = [i for i in range(128)]
+        self.core.IMEM.instructions = ['LV VR1 SR1', 'HALT']
+        self.core.RFs['SRF'].Write('SR1', 32)
+        self.core.VDMEM.data = golden
+        self.core.len_reg = 32
+        self.core.run()
+
+        self.assertEqual(golden[32:64], self.core.RFs['VRF'].Read('VR1')[:32])
 
 
 if __name__ == '__main__':

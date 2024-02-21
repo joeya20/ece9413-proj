@@ -457,20 +457,52 @@ class TestCore(unittest.TestCase):
         
         # check not taken
         self.assertEqual(self.core.RFs['SRF'].Read('SR5'), 64)
-
-    def test_UNPACKHI(self):
-        pass
     
     def test_UNPACKLO(self):
-        pass
-    
-    def test_PACKHI(self):
-        pass
+        self.core.IMEM.instructions = ['UNPACKLO VR3 VR1 VR2', 'HALT']
+        self.core.RFs['VRF'].Write('VR1', [i for i in range(64)])
+        self.core.RFs['VRF'].Write('VR2', [-1*i for i in range(64)])
+        self.core.run()
+        expected = [0] * 64
+        expected[::2] = [i for i in range(64)][:32]
+        expected[1::2] = [-1*i for i in range(64)][:32]
+        # check taken equals
+        self.assertEqual(expected, self.core.RFs['VRF'].Read('VR3'))
+
+    def test_UNPACKHI(self):
+        self.core.IMEM.instructions = ['UNPACKHI VR3 VR1 VR2', 'HALT']
+        self.core.RFs['VRF'].Write('VR1', [i for i in range(64)])
+        self.core.RFs['VRF'].Write('VR2', [-1*i for i in range(64)])
+        self.core.run()
+        expected = [0] * 64
+        expected[::2] = [i for i in range(64)][32:]
+        expected[1::2] = [-1*i for i in range(64)][32:]
+        # check taken equals
+        self.assertEqual(expected, self.core.RFs['VRF'].Read('VR3'))
     
     def test_PACKLO(self):
-        pass
+        self.core.IMEM.instructions = ['PACKLO VR3 VR1 VR2', 'HALT']
+        self.core.RFs['VRF'].Write('VR1', [i for i in range(64)])
+        self.core.RFs['VRF'].Write('VR2', [-1*i for i in range(64)])
+        self.core.run()
+        expected = [0] * 64
+        expected[:32] = [i for i in range(64)][::2]
+        expected[32:] = [-1*i for i in range(64)][::2]
+        # check taken equals
+        self.assertEqual(expected, self.core.RFs['VRF'].Read('VR3'))
     
-    def test_LV_len_reg(self):
+    def test_PACKHI(self):
+        self.core.IMEM.instructions = ['PACKHI VR3 VR1 VR2', 'HALT']
+        self.core.RFs['VRF'].Write('VR1', [i for i in range(64)])
+        self.core.RFs['VRF'].Write('VR2', [-1*i for i in range(64)])
+        self.core.run()
+        expected = [0] * 64
+        expected[:32] = [i for i in range(64)][1::2]
+        expected[32:] = [-1*i for i in range(64)][1::2]
+        # check taken equals
+        self.assertEqual(expected, self.core.RFs['VRF'].Read('VR3'))
+    
+    def test_len_reg(self):
         golden = [i for i in range(128)]
         self.core.IMEM.instructions = ['LV VR1 SR1', 'HALT']
         self.core.RFs['SRF'].Write('SR1', 32)
@@ -479,6 +511,9 @@ class TestCore(unittest.TestCase):
         self.core.run()
 
         self.assertEqual(golden[32:64], self.core.RFs['VRF'].Read('VR1')[:32])
+
+    def test_mask(self):
+        pass
 
 
 if __name__ == '__main__':

@@ -641,12 +641,12 @@ class Core():
         vr3 = self.RFs['VRF'].Read(vr3_idx)
         
         for i in range(self.len_reg//2):
-            self.RFs['VRF'].write_vec_element(vr1_idx, i*2, vr2[i + self.MVL//2])
-            self.RFs['VRF'].write_vec_element(vr1_idx, i*2+1, vr3[i + self.MVL//2])
+            self.RFs['VRF'].write_vec_element(vr1_idx, i*2, vr2[i + self.len_reg//2])
+            self.RFs['VRF'].write_vec_element(vr1_idx, i*2+1, vr3[i + self.len_reg//2])
     
         if self.len_reg % 2 != 0:
             i = self.len_reg//2
-            self.RFs['VRF'].write_vec_element(vr1_idx, i*2, vr2[i + self.MVL//2])
+            self.RFs['VRF'].write_vec_element(vr1_idx, i*2, vr2[i + self.len_reg//2])
     
     # Instruction 26
     def PACKLO(self, vr1_idx, vr2_idx, vr3_idx):
@@ -655,7 +655,7 @@ class Core():
         
         for i in range(self.len_reg//2):
             self.RFs['VRF'].write_vec_element(vr1_idx, i, vr2[i*2])
-            self.RFs['VRF'].write_vec_element(vr1_idx, i + self.MVL//2, vr3[i*2])
+            self.RFs['VRF'].write_vec_element(vr1_idx, i + self.len_reg//2, vr3[i*2])
     
     # Instruction 27
     def PACKHI(self, vr1_idx, vr2_idx, vr3_idx):
@@ -664,7 +664,7 @@ class Core():
 
         for i in range(self.len_reg//2):
             self.RFs['VRF'].write_vec_element(vr1_idx, i, vr2[i*2 + 1])
-            self.RFs['VRF'].write_vec_element(vr1_idx, i + self.MVL//2, vr3[i*2 + 1])
+            self.RFs['VRF'].write_vec_element(vr1_idx, i + self.len_reg//2, vr3[i*2 + 1])
 
 
 if __name__ == "__main__":

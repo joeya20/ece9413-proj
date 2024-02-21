@@ -21,12 +21,12 @@ test function in integer format. Each line in this le represents one word (32 bi
 test function in integer format. Each line in this le represents one word (32 bit) of data in the VDMEM
 
 ```bash
-python simulator.py </path/to/IODIR>
+python simulator.py --iodir </path/to/IODIR>
 ```
 
 ## Testing
-A test script is provided to run all tests in ./tests
+A python script is provided to run all unit tests
 
 ```bash
-./run_test.sh
+python test.py
 ```

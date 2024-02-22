@@ -3,7 +3,7 @@
 ## Dot Product
 To run the dot product test:
 ```bash
-python simulator.py --iodir <path to IO>
+python simulator.py --iodir tests
 ```
 
 Input:

@@ -8,6 +8,7 @@
 ├── simulator.py    # simulator
 └── tests           # test directory
     ├── ISA_Sample  # sample test provided
+    ├── dot_product # performs required dot product test
     └── test1
 ```
 

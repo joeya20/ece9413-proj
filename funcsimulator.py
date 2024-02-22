@@ -596,8 +596,6 @@ class Core():
             case self.BRANCH_TYPE.EQ:
                 if src1 == src2:
                     self.pc = self.pc + imm
-                    print('new pc:', self.pc)
-                    print('new instr:', self.IMEM.instructions[self.pc])
             case self.BRANCH_TYPE.NE:
                 if src1 != src2:
                     self.pc = self.pc + imm

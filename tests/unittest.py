@@ -1,7 +1,7 @@
 import unittest
 import tempfile
 import pathlib
-from simulator import Core, IMEM, DMEM
+from funcsimulator import Core, IMEM, DMEM
 
 
 class TestCore(unittest.TestCase):
@@ -24,7 +24,7 @@ class TestCore(unittest.TestCase):
     def tearDown(self):
         self.tmpdir.cleanup()
 
-    def test_addvv(self):
+    def test_ADDVV(self):
         self.core.IMEM.instructions = ['ADDVV VR2 VR1 VR0', 'HALT']
         self.core.RFs['VRF'].registers[0] = [i for i in range(64)]
         self.core.RFs['VRF'].registers[1] = [i*2 for i in range(64)]
@@ -32,7 +32,7 @@ class TestCore(unittest.TestCase):
         
         self.assertEqual([i + i*2 for i in range(64)], self.core.RFs['VRF'].registers[2])
 
-    def test_subvv(self):
+    def test_SUBVV(self):
         self.core.IMEM.instructions = ['SUBVV VR2 VR1 VR0', 'HALT']
         self.core.RFs['VRF'].registers[0] = [i for i in range(64)]
         self.core.RFs['VRF'].registers[1] = [i*2 for i in range(64)]
@@ -40,7 +40,7 @@ class TestCore(unittest.TestCase):
         
         self.assertEqual([i*2 - i for i in range(64)], self.core.RFs['VRF'].registers[2])
     
-    def test_addvs(self):
+    def test_ADDVS(self):
         self.core.IMEM.instructions = ['ADDVS VR2 VR1 SR1', 'HALT']
         self.core.RFs['VRF'].registers[1] = [i*2 for i in range(64)]
         self.core.RFs['SRF'].registers[1] = [63]
@@ -48,7 +48,7 @@ class TestCore(unittest.TestCase):
         
         self.assertEqual([i*2 + 63 for i in range(64)], self.core.RFs['VRF'].registers[2])
     
-    def test_subvs(self):
+    def test_SUBVS(self):
         self.core.IMEM.instructions = ['SUBVS VR2 VR1 SR1', 'HALT']
         self.core.RFs['VRF'].registers[1] = [i*2 for i in range(64)]
         self.core.RFs['SRF'].registers[1] = [63]
@@ -56,7 +56,7 @@ class TestCore(unittest.TestCase):
         
         self.assertEqual([i*2 - 63 for i in range(64)], self.core.RFs['VRF'].registers[2])
         
-    def test_mulvv(self):
+    def test_MULVV(self):
         self.core.IMEM.instructions = ['MULVV VR2 VR1 VR0', 'HALT']
         self.core.RFs['VRF'].registers[0] = [i for i in range(64)]
         self.core.RFs['VRF'].registers[1] = [i*2 for i in range(64)]
@@ -64,7 +64,7 @@ class TestCore(unittest.TestCase):
         
         self.assertEqual([i*2 * i for i in range(64)], self.core.RFs['VRF'].registers[2])
         
-    def test_divvv(self):
+    def test_DIVVV(self):
         self.core.IMEM.instructions = ['DIVVV VR2 VR1 VR0', 'HALT']
         self.core.RFs['VRF'].registers[0] = [i for i in range(1, 65)]
         self.core.RFs['VRF'].registers[1] = [i*2 for i in range(1, 65)]
@@ -72,7 +72,7 @@ class TestCore(unittest.TestCase):
         
         self.assertEqual([i*2 / i for i in range(1, 65)], self.core.RFs['VRF'].registers[2])
     
-    def test_mulvs(self):
+    def test_MULVS(self):
         self.core.IMEM.instructions = ['MULVS VR2 VR1 SR1', 'HALT']
         self.core.RFs['VRF'].registers[1] = [i for i in range(64)]
         self.core.RFs['SRF'].registers[1] = [2]
@@ -80,7 +80,7 @@ class TestCore(unittest.TestCase):
         
         self.assertEqual([i*2 for i in range(64)], self.core.RFs['VRF'].registers[2])
         
-    def test_divvs(self):
+    def test_DIVVS(self):
         self.core.IMEM.instructions = ['DIVVS VR2 VR1 SR1', 'HALT']
         self.core.RFs['VRF'].registers[1] = [i for i in range(64)]
         self.core.RFs['SRF'].registers[1] = [2]
@@ -304,7 +304,7 @@ class TestCore(unittest.TestCase):
         self.core.RFs['SRF'].Write('SR1', 100)
         self.core.RFs['SRF'].Write('SR2', 32)
         self.core.run()
-        
+
         self.assertEqual(100, self.core.SDMEM.data[42])
     
     def test_ADD(self):
@@ -502,7 +502,8 @@ class TestCore(unittest.TestCase):
         # check taken equals
         self.assertEqual(expected, self.core.RFs['VRF'].Read('VR3'))
     
-    def test_len_reg(self):
+    # special behavior: len reg
+    def test_len_reg_LV(self):
         golden = [i for i in range(128)]
         self.core.IMEM.instructions = ['LV VR1 SR1', 'HALT']
         self.core.RFs['SRF'].Write('SR1', 32)
@@ -511,10 +512,19 @@ class TestCore(unittest.TestCase):
         self.core.run()
 
         self.assertEqual(golden[32:64], self.core.RFs['VRF'].Read('VR1')[:32])
+        
+    # special behavior: mask reg
+    def test_mask_arith(self):
+        self.core.IMEM.instructions = ['SLTVS VR1 SR1', 'ADDVV VR3 VR1 VR2', 'HALT']
+        self.core.RFs['VRF'].registers[1] = [i for i in range(64)]
+        self.core.RFs['VRF'].registers[2] = [-1*i for i in range(64)]
+        self.core.RFs['VRF'].registers[3] = [100] * 64
+        self.core.RFs['SRF'].registers[1] = [32]
+        self.core.run()
 
-    def test_mask(self):
-        pass
+        expected = [0] * 32 + [100] * 32
+        self.assertEqual(expected, self.core.RFs['VRF'].registers[3])
 
-
+        
 if __name__ == '__main__':
     unittest.main()

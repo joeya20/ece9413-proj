@@ -236,6 +236,7 @@ class Core():
         return instr_match.groupdict()
     
     def run(self):
+        i = 0
         while (True):
             # fetch instruction
             instr = self.IMEM.Read(self.pc)

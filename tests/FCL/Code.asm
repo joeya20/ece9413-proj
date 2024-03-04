@@ -105,7 +105,7 @@ MTCL SR7            # VLR = 64
 LS SR1 SR0 0        # SR1 = 0
 ADD SR2 SR2 SR7     # SR2 = W[i+1]
 ADD SR3 SR3 SR6     # i++
-BLT SR3 SR5 -?      # go to start of loop
+BLT SR3 SR5 -60     # go to start of loop
 
 # FINISHED 'a * W'
 # now do '+ b'

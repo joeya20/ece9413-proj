@@ -1,7 +1,7 @@
 import os
 import argparse
 from enum import IntEnum
-
+import re
 
 class IMEM(object):
     def __init__(self, iodir):
@@ -11,7 +11,11 @@ class IMEM(object):
 
         try:
             with open(self.filepath, 'r') as insf:
-                self.instructions = [ins.strip() for ins in insf.readlines()]
+                # ignore comment lines and empty lines
+                self.instructions = [ins.strip() for ins in insf.readlines() if 
+                                    not (len(ins.strip()) == 0 
+                                        or ins.strip().startswith('#'))
+                                ]
             print("IMEM - Instructions loaded from file:", self.filepath)
         except Exception as e:
             print("IMEM - ERROR: Couldn't open file in path:", self.filepath)
@@ -196,6 +200,7 @@ class Core():
         self.len_reg = self.MVL
         self.mask_reg = [True for _ in range(self.MVL)]
         self.pc = 0
+        self.re_pattern = re.compile("(?:^(?P<instruction>\w+)(?:[ ]+(?P<operand1>\w+))?(?:[ ]+(?P<operand2>\w+))?(?:[ ]+(?P<operand3>[-\w]+))?[ ]*(?P<inline_comment>#.*)?$)|(?:^(?P<comment_line>[ ]*?#.*)$)|(?P<empty_line>^(?<!.)$|(?:^[ ]+$)$)")
     
     class VECTOR_OP_TYPE(IntEnum):
         ''' enum for vector arithmetic operations '''
@@ -224,6 +229,12 @@ class Core():
         GE = 5
         LE = 6
 
+    def parseInstr(self, instr_str):
+        instr_match = self.re_pattern.search(instr_str)
+        if instr_match is None:
+            raise Exception(f'Could not parse instruction: {instr_str}')
+        return instr_match.groupdict()
+    
     def run(self):
         while (True):
             # fetch instruction
@@ -231,114 +242,115 @@ class Core():
             
             # decode and execute instruction
             # we assume valid instructions...
-            decoded_instr = str(instr).split(' ')
-            match decoded_instr[0]:
+            decoded_instr = self.parseInstr(str(instr))
+            # {'instruction': str, 'operand1': str | None, 'operand2': str | None, 'operand3': str | None}
+            match decoded_instr['instruction']:
                 case "ADDVV":
-                    self.___VV(decoded_instr[1], decoded_instr[2], decoded_instr[3], self.VECTOR_OP_TYPE.ADD)
+                    self.___VV(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.VECTOR_OP_TYPE.ADD)
                 case "SUBVV":
-                    self.___VV(decoded_instr[1], decoded_instr[2], decoded_instr[3], self.VECTOR_OP_TYPE.SUB)
+                    self.___VV(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.VECTOR_OP_TYPE.SUB)
                 case "ADDVS":
-                    self.___VS(decoded_instr[1], decoded_instr[2], decoded_instr[3], self.VECTOR_OP_TYPE.ADD)
+                    self.___VS(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.VECTOR_OP_TYPE.ADD)
                 case "SUBVS":
-                    self.___VS(decoded_instr[1], decoded_instr[2], decoded_instr[3], self.VECTOR_OP_TYPE.SUB)
+                    self.___VS(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.VECTOR_OP_TYPE.SUB)
                 case "MULVV":
-                    self.___VV(decoded_instr[1], decoded_instr[2], decoded_instr[3], self.VECTOR_OP_TYPE.MUL)
+                    self.___VV(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.VECTOR_OP_TYPE.MUL)
                 case "DIVVV":
-                    self.___VV(decoded_instr[1], decoded_instr[2], decoded_instr[3], self.VECTOR_OP_TYPE.DIV)
+                    self.___VV(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.VECTOR_OP_TYPE.DIV)
                 case "MULVS":
-                    self.___VS(decoded_instr[1], decoded_instr[2], decoded_instr[3], self.VECTOR_OP_TYPE.MUL)
+                    self.___VS(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.VECTOR_OP_TYPE.MUL)
                 case "DIVVS":
-                    self.___VS(decoded_instr[1], decoded_instr[2], decoded_instr[3], self.VECTOR_OP_TYPE.DIV)
+                    self.___VS(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.VECTOR_OP_TYPE.DIV)
                 case "SEQVV":
-                    self.S__VV(decoded_instr[1], decoded_instr[2], self.BRANCH_TYPE.EQ)
+                    self.S__VV(decoded_instr['operand1'], decoded_instr['operand2'], self.BRANCH_TYPE.EQ)
                 case "SNEVV":
-                    self.S__VV(decoded_instr[1], decoded_instr[2], self.BRANCH_TYPE.NE)
+                    self.S__VV(decoded_instr['operand1'], decoded_instr['operand2'], self.BRANCH_TYPE.NE)
                 case "SGTVV":
-                    self.S__VV(decoded_instr[1], decoded_instr[2], self.BRANCH_TYPE.GT)
+                    self.S__VV(decoded_instr['operand1'], decoded_instr['operand2'], self.BRANCH_TYPE.GT)
                 case "SLTVV":
-                    self.S__VV(decoded_instr[1], decoded_instr[2], self.BRANCH_TYPE.LT)
+                    self.S__VV(decoded_instr['operand1'], decoded_instr['operand2'], self.BRANCH_TYPE.LT)
                 case "SGEVV":
-                    self.S__VV(decoded_instr[1], decoded_instr[2], self.BRANCH_TYPE.GE)
+                    self.S__VV(decoded_instr['operand1'], decoded_instr['operand2'], self.BRANCH_TYPE.GE)
                 case "SLEVV":
-                    self.S__VV(decoded_instr[1], decoded_instr[2], self.BRANCH_TYPE.LE)
+                    self.S__VV(decoded_instr['operand1'], decoded_instr['operand2'], self.BRANCH_TYPE.LE)
                 case "SEQVS":
-                    self.S__VS(decoded_instr[1], decoded_instr[2], self.BRANCH_TYPE.EQ)
+                    self.S__VS(decoded_instr['operand1'], decoded_instr['operand2'], self.BRANCH_TYPE.EQ)
                 case "SNEVS":
-                    self.S__VS(decoded_instr[1], decoded_instr[2], self.BRANCH_TYPE.NE)
+                    self.S__VS(decoded_instr['operand1'], decoded_instr['operand2'], self.BRANCH_TYPE.NE)
                 case "SGTVS":
-                    self.S__VS(decoded_instr[1], decoded_instr[2], self.BRANCH_TYPE.GT)
+                    self.S__VS(decoded_instr['operand1'], decoded_instr['operand2'], self.BRANCH_TYPE.GT)
                 case "SLTVS":
-                    self.S__VS(decoded_instr[1], decoded_instr[2], self.BRANCH_TYPE.LT)
+                    self.S__VS(decoded_instr['operand1'], decoded_instr['operand2'], self.BRANCH_TYPE.LT)
                 case "SGEVS":
-                    self.S__VS(decoded_instr[1], decoded_instr[2], self.BRANCH_TYPE.GE)
+                    self.S__VS(decoded_instr['operand1'], decoded_instr['operand2'], self.BRANCH_TYPE.GE)
                 case "SLEVS":
-                    self.S__VS(decoded_instr[1], decoded_instr[2], self.BRANCH_TYPE.LE)
+                    self.S__VS(decoded_instr['operand1'], decoded_instr['operand2'], self.BRANCH_TYPE.LE)
                 case "CVM":
                     self.CVM()
                 case "POP":
-                    self.POP(decoded_instr[1])
+                    self.POP(decoded_instr['operand1'])
                 case "MTCL":
-                    self.MTCL(decoded_instr[1])
+                    self.MTCL(decoded_instr['operand1'])
                 case "MFCL":
-                    self.MFCL(decoded_instr[1])
+                    self.MFCL(decoded_instr['operand1'])
                 case "LV":
-                    self.LV(decoded_instr[1], decoded_instr[2])
+                    self.LV(decoded_instr['operand1'], decoded_instr['operand2'])
                 case "SV":
-                    self.SV(decoded_instr[1], decoded_instr[2])
+                    self.SV(decoded_instr['operand1'], decoded_instr['operand2'])
                 case "LVWS":
-                    self.LVWS(decoded_instr[1], decoded_instr[2], decoded_instr[3])
+                    self.LVWS(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'])
                 case "SVWS":
-                    self.SVWS(decoded_instr[1], decoded_instr[2], decoded_instr[3])
+                    self.SVWS(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'])
                 case "LVI":
-                    self.LVI(decoded_instr[1], decoded_instr[2], decoded_instr[3])
+                    self.LVI(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'])
                 case "SVI":
-                    self.SVI(decoded_instr[1], decoded_instr[2], decoded_instr[3])
+                    self.SVI(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'])
                 case "LS":
-                    self.LS(decoded_instr[1], decoded_instr[2], decoded_instr[3])
+                    self.LS(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'])
                 case "SS":
-                    self.SS(decoded_instr[1], decoded_instr[2], decoded_instr[3])
+                    self.SS(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'])
                 case "ADD":
-                    self.scalar_op(decoded_instr[1], decoded_instr[2], decoded_instr[3], self.SCALAR_OP_TYPE.ADD)
+                    self.scalar_op(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.SCALAR_OP_TYPE.ADD)
                 case "SUB":
-                    self.scalar_op(decoded_instr[1], decoded_instr[2], decoded_instr[3], self.SCALAR_OP_TYPE.SUB)
+                    self.scalar_op(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.SCALAR_OP_TYPE.SUB)
                 case "AND":
-                    self.scalar_op(decoded_instr[1], decoded_instr[2], decoded_instr[3], self.SCALAR_OP_TYPE.AND)
+                    self.scalar_op(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.SCALAR_OP_TYPE.AND)
                 case "OR":
-                    self.scalar_op(decoded_instr[1], decoded_instr[2], decoded_instr[3], self.SCALAR_OP_TYPE.OR)
+                    self.scalar_op(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.SCALAR_OP_TYPE.OR)
                 case "XOR":
-                    self.scalar_op(decoded_instr[1], decoded_instr[2], decoded_instr[3], self.SCALAR_OP_TYPE.XOR)
+                    self.scalar_op(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.SCALAR_OP_TYPE.XOR)
                 case "SLL":
-                    self.scalar_op(decoded_instr[1], decoded_instr[2], decoded_instr[3], self.SCALAR_OP_TYPE.SLL)
+                    self.scalar_op(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.SCALAR_OP_TYPE.SLL)
                 case "SRL":
-                    self.scalar_op(decoded_instr[1], decoded_instr[2], decoded_instr[3], self.SCALAR_OP_TYPE.SRL)
+                    self.scalar_op(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.SCALAR_OP_TYPE.SRL)
                 case "SRA":
-                    self.scalar_op(decoded_instr[1], decoded_instr[2], decoded_instr[3], self.SCALAR_OP_TYPE.SRA)
+                    self.scalar_op(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.SCALAR_OP_TYPE.SRA)
                 case "BEQ":
-                    self.branch(decoded_instr[1], decoded_instr[2], decoded_instr[3], self.BRANCH_TYPE.EQ)
+                    self.branch(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.BRANCH_TYPE.EQ)
                     continue
                 case "BNE":
-                    self.branch(decoded_instr[1], decoded_instr[2], decoded_instr[3], self.BRANCH_TYPE.NE)
+                    self.branch(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.BRANCH_TYPE.NE)
                     continue
                 case "BGT":
-                    self.branch(decoded_instr[1], decoded_instr[2], decoded_instr[3], self.BRANCH_TYPE.GT)
+                    self.branch(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.BRANCH_TYPE.GT)
                     continue
                 case "BLT":
-                    self.branch(decoded_instr[1], decoded_instr[2], decoded_instr[3], self.BRANCH_TYPE.LT)
+                    self.branch(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.BRANCH_TYPE.LT)
                     continue
                 case "BGE":
-                    self.branch(decoded_instr[1], decoded_instr[2], decoded_instr[3], self.BRANCH_TYPE.GE)
+                    self.branch(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.BRANCH_TYPE.GE)
                     continue
                 case "BLE":
-                    self.branch(decoded_instr[1], decoded_instr[2], decoded_instr[3], self.BRANCH_TYPE.LE)
+                    self.branch(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.BRANCH_TYPE.LE)
                     continue
                 case "UNPACKLO":
-                    self.UNPACKLO(decoded_instr[1], decoded_instr[2], decoded_instr[3])
+                    self.UNPACKLO(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'])
                 case "UNPACKHI":
-                    self.UNPACKHI(decoded_instr[1], decoded_instr[2], decoded_instr[3])
+                    self.UNPACKHI(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'])
                 case "PACKLO":
-                    self.PACKLO(decoded_instr[1], decoded_instr[2], decoded_instr[3])
+                    self.PACKLO(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'])
                 case "PACKHI":
-                    self.PACKHI(decoded_instr[1], decoded_instr[2], decoded_instr[3])
+                    self.PACKHI(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'])
                 case "HALT":
                     break
                 case _:

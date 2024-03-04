@@ -29,18 +29,22 @@ The tests are fairly simple and test for functional correctness for one or two s
 A temp directory is created before each test to serve as input for the simulator and deleted after the completion of the test. This is strictly to adhere to the IO and does not serve any functional purpose. Each test is self-isolated and modifies the instruction memory, (scalar and vector) data memory, and (scalar and vector) register files before executing the simulator. The result of each test is then verified using an appropriate assert*(...) statement.
 
 ### Instructions
+
+**The test script expects a file named "ja4844_ajn313_funcsimulator.py" in part1_submission/**
+(or modify the import statement in [line 4 of tests/unittest.py](tests/unittest.py#L4) to the name of the simulator)
+
 to run the entire test suite:
 ```bash
+cd part1_submission
 python -m tests.unittest [-vbf] # it is necessary to call it as a module
 ```
 
 to run a specific test:
 ```bash
+cd part1_submission
 python -m tests.unittest TestCore.<test_name> [-vbf]  # it is necessary to call it as a module
 ```
 
 -v for verbose errors  
 -b to buffer stdout from simulator.py  
 -f to exit after first error is encountered  
-
-**This REQUIRES that funcsimulator.py is in the same directory as tests/**

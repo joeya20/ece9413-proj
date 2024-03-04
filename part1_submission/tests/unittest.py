@@ -1,7 +1,7 @@
 import unittest
 import tempfile
 import pathlib
-from funcsimulator import Core, IMEM, DMEM
+from ja4844_ajn313_funcsimulator import Core, IMEM, DMEM
 
 
 class TestCore(unittest.TestCase):

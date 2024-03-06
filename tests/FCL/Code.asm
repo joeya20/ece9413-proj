@@ -9,7 +9,8 @@
 # ...
 # W[i] = VDMEM[i*256+512:(i+1)*256+511]
 # W[255] = VDMEM[65792:66047]
-# out = VDMEM[66048:66304]
+# a * W = VDMEM[66048:66303]
+# out = VDMEM[66304:66559]
 
 # calculate a * W
 # iterate over every vector in W and do dot product with a
@@ -60,37 +61,37 @@ ADDVV VR4 VR4 VR6   # accumulate addition in VR4
 # second, accumulate to get scalar value
 PACKLO VR5 VR4 VR0  # VR5[:31] = VR4[:64:2] split the lower half of the vector for addition
 PACKHI VR6 VR4 VR0  # VR6[:31] = VR4[1:64:2] split the upper half of the vector for addition
-SRL SR7 SR7 SR1     # SR7 = SR7 >> 1 (SR7 = 64 / 2 = 32)
+SRL SR7 SR7 SR6     # SR7 = SR7 >> 1 (SR7 = 64 / 2 = 32)
 MTCL SR7            # VLEN = 32
 ADDVV VR4 VR5 VR6   # sum the vectors and re-accumulate into VR4
 
 PACKLO VR5 VR4 VR0  # VR5[:15] = VR4[:32:2] split the lower half of the vector for addition
 PACKHI VR6 VR4 VR0  # VR6[:15] = VR4[1:32:2] split the upper half of the vector for addition
-SRL SR7 SR7 SR1     # SR7 = SR7 >> 1 (SR7 = 32 / 2 = 16)
+SRL SR7 SR7 SR6     # SR7 = SR7 >> 1 (SR7 = 32 / 2 = 16)
 MTCL SR7            # VLEN = 16
 ADDVV VR4 VR5 VR6   # sum the vectors and re-accumulate into VR4
 
 PACKLO VR5 VR4 VR0  # VR5[:7] = VR4[:16:2] split the lower half of the vector for addition
 PACKHI VR6 VR4 VR0  # VR6[:7] = VR4[1:16:2] split the upper half of the vector for addition
-SRL SR7 SR7 SR1     # SR7 = SR7 >> 1 (SR7 = 16 / 2 = 8)
+SRL SR7 SR7 SR6     # SR7 = SR7 >> 1 (SR7 = 16 / 2 = 8)
 MTCL SR7            # VLEN = 8
 ADDVV VR4 VR5 VR6   # sum the vectors and re-accumulate into VR4
 
 PACKLO VR5 VR4 VR0  # VR5[:3] = VR4[:8:2] split the lower half of the vector for addition
 PACKHI VR6 VR4 VR0  # VR6[:3] = VR4[1:8:2] split the upper half of the vector for addition
-SRL SR7 SR7 SR1     # SR7 = SR7 >> 1 (SR7 = 8 / 2 = 4)
+SRL SR7 SR7 SR6     # SR7 = SR7 >> 1 (SR7 = 8 / 2 = 4)
 MTCL SR7            # VLEN = 4
 ADDVV VR4 VR5 VR6   # sum the vectors and re-accumulate into VR4
 
 PACKLO VR5 VR4 VR0  # VR5[:1] = VR4[:4:2] split the lower half of the vector for addition
 PACKHI VR6 VR4 VR0  # VR6[:1] = VR4[1:4:2] split the upper half of the vector for addition
-SRL SR7 SR7 SR1     # SR7 = SR7 >> 1 (SR7 = 4 / 2 = 2)
+SRL SR7 SR7 SR6     # SR7 = SR7 >> 1 (SR7 = 4 / 2 = 2)
 MTCL SR7            # VLEN = 2
 ADDVV VR4 VR5 VR6   # sum the vectors and re-accumulate into VR4
 
 PACKLO VR5 VR4 VR0  # VR5[0] = VR4[:2:2] split the lower half of the vector for addition
 PACKHI VR6 VR4 VR0  # VR6[0] = VR4[1:2:2] split the upper half of the vector for addition
-SRL SR7 SR7 SR1     # SR7 = SR7 >> 1 (SR7 = 2 / 2 = 1)
+SRL SR7 SR7 SR6     # SR7 = SR7 >> 1 (SR7 = 2 / 2 = 1)
 MTCL SR7            # VLEN = 1
 ADDVV VR4 VR5 VR6   # VR4[0] = accum(VR4[:])
 
@@ -105,7 +106,8 @@ MTCL SR7            # VLR = 64
 LS SR1 SR0 0        # SR1 = 0
 ADD SR2 SR2 SR7     # SR2 = W[i+1]
 ADD SR3 SR3 SR6     # i++
-BLT SR3 SR5 -60     # go to start of loop
+ADDVV VR4 VR0 VR0   # reset VR4
+BLT SR3 SR5 -61     # go to start of loop
 
 # FINISHED 'a * W'
 # now do '+ b'

@@ -11,13 +11,18 @@ def main():
     W = np.reshape(np.array(vdmem_lines[512:66048], dtype=np.int32), (-1, 256))
     b = np.array(vdmem_lines[66048:66304], dtype=np.int32)
 
-    dot_res = np.dot(W, a)
-    dot_out = np.array(vdmem_lines[66304:66560], dtype=np.int32)
-    print(dot_res == dot_out)
-    final_res = dot_res + b
-    final_out = np.array(vdmem_lines[:256], dtype=np.int32)
-    print(final_res == final_out)
+    # we have to transpose W because of the way we construct W
+    # each weight vector is initially a row when it should be a column
+    dot_expected = np.dot(a, W.T)
+    dot_actual = np.array(vdmem_lines[66304:66560], dtype=np.int32)
+    # compare results and reduce using AND
+    print(f'dot product output valid: {np.logical_and.reduce(dot_actual == dot_expected)}')
+    
+    fcl_expected = dot_expected + b
+    fcl_actual = np.array(vdmem_lines[:256], dtype=np.int32)
+    # compare results and reduce using AND
+    print(f'FCL output valid: {np.logical_and.reduce(fcl_expected == fcl_actual)}')
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
     main()

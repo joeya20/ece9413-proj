@@ -1,6 +1,6 @@
 #Run with python simulator.py --iodir tests\conv2D
 #Optimized to minimize vector loads
-#results start at address 100
+#results start at VDMEMOP address 100
 
 LS SR7 SR0 23      #store value 31 for addressing
 LS SR6 SR0 31      #store value 16 for vlen

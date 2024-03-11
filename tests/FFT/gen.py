@@ -5,6 +5,7 @@ from random import randint
 def parse_twiddle():
     re_fcts = []
     im_fcts = []
+    # https://regex101.com/r/ddQDDq/1
     pattern = re.compile('W_[0-9]+\s=\s(?P<real>-*[0-9]+\.[0-9]+)(?P<imag>(?:\+|-)[0-9]+\.[0-9]+)j')
     with open('twiddle_factors.txt', 'r') as in_file:
         for line in in_file.readlines():

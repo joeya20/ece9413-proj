@@ -225,6 +225,7 @@ DIVVS VR4 VR4 SR7
 DIVVS VR7 VR7 SR7
 DIVVS VR5 VR5 SR7
 DIVVS VR6 VR6 SR7
+LS SR7 SR0 2            # SR7 = 2
 SVWS VR4 SR4 SR1        # Re(y[i * 4]) = Re(y_even) + Re(W^0_128 * y_odd)
 ADD SR4 SR4 SR7         # SR4 = Re(y_1[2])
 SVWS VR7 SR4 SR1        # Re(y[i * 4 + 2]) = Re(y_even) - Re(W^0_128 * y_odd)
@@ -237,7 +238,6 @@ SVWS VR6 SR4 SR1        # Im(y[i * 4]) = Im(y_even) + Im(W^0_128 * y_odd)
 LS SR1 SR0 1            # SR1 = 1
 LS SR6 SR0 6            # SR6 = k
 ADD SR6 SR6 SR1         # k += 1
-LS SR7 SR0 2            # SR7 = 2
 BGE SR6 SR7 10          # exit loop if k >= 2
 
 # loop overhead
@@ -249,7 +249,7 @@ LS SR1 SR0 1            # SR1 = 1
 SUB SR4 SR4 SR6         # SR4 = pointer to Re(y_1[0])
 ADD SR4 SR4 SR1         # SR5 = 897 = pointer to Re(y_1[1])
 ADD SR3 SR3 SR1         # SR3 = 705 = pointer to Re(y_0[65])
-BEQ SR0 SR0 -48         # go to start of loop
+BEQ SR0 SR0 -46         # go to start of loop
 
 # third stage
 # 16 8-point FFTs
@@ -341,6 +341,7 @@ DIVVS VR4 VR4 SR7
 DIVVS VR7 VR7 SR7
 DIVVS VR5 VR5 SR7
 DIVVS VR6 VR6 SR7
+LS SR7 SR0 12           # SR7 = 4 = input stride
 SVWS VR4 SR4 SR1        # Re(y[i * 8]) = Re(y_even) + Re(W^0_128 * y_odd)
 ADD SR4 SR4 SR7         # SR4 = Re(y_1[4])
 SVWS VR7 SR4 SR1        # Re(y[i * 8 + 4]) = Re(y_even) - Re(W^0_128 * y_odd)
@@ -353,7 +354,6 @@ SVWS VR6 SR4 SR1        # Im(y[i * 8]) = Im(y_even) + Im(W^0_128 * y_odd)
 LS SR1 SR0 1            # SR1 = 1
 LS SR6 SR0 7            # SR6 = k
 ADD SR6 SR6 SR1         # k += 1
-LS SR7 SR0 12           # SR7 = 4 = input stride
 BGE SR6 SR7 10          # exit loop if k >= 4
 
 # loop overhead
@@ -365,7 +365,7 @@ LS SR1 SR0 1            # SR1 = 1
 SUB SR4 SR4 SR6         # SR4 = pointer to Re(y_1[0])
 ADD SR4 SR4 SR1         # SR5 = 897 = pointer to Re(y_1[1])
 ADD SR3 SR3 SR1         # SR3 = 705 = pointer to Re(y_0[65])
-BEQ SR0 SR0 -48         # go to start of loop
+BEQ SR0 SR0 -46         # go to start of loop
 
 # # fourth stage
 # # 8 16-point FFTs
@@ -468,6 +468,7 @@ DIVVS VR4 VR4 SR7
 DIVVS VR7 VR7 SR7
 DIVVS VR5 VR5 SR7
 DIVVS VR6 VR6 SR7
+LS SR7 SR0 18           # SR7 = 8 = input stride
 SVWS VR4 SR4 SR1        # Re(y[i * 16]) = Re(y_even) + Re(W^0_128 * y_odd)
 ADD SR4 SR4 SR7         # SR4 = Re(y_1[8])
 SVWS VR7 SR4 SR1        # Re(y[i * 16 + 8]) = Re(y_even) - Re(W^0_128 * y_odd)
@@ -480,7 +481,6 @@ SVWS VR6 SR4 SR1        # Im(y[i * 16]) = Im(y_even) + Im(W^0_128 * y_odd)
 LS SR1 SR0 1            # SR1 = 1
 LS SR6 SR0 27           # SR6 = k
 ADD SR6 SR6 SR1         # k += 1
-LS SR7 SR0 18           # SR7 = 8 = input stride
 BGE SR6 SR7 10          # exit loop if k >= 8
 
 # loop overhead
@@ -492,7 +492,7 @@ LS SR1 SR0 1            # SR1 = 1
 SUB SR4 SR4 SR6         # SR4 = pointer to Re(y_1[0])
 ADD SR4 SR4 SR1         # SR5 = 897 = pointer to Re(y_1[1])
 ADD SR3 SR3 SR1         # SR3 = 705 = pointer to Re(y_0[65])
-BEQ SR0 SR0 -48         # go to start of loop
+BEQ SR0 SR0 -46         # go to start of loop
 
 # fifth stage
 # # The following steps are repeated for each of the 4 32-point FFTs
@@ -562,6 +562,7 @@ DIVVS VR4 VR4 SR7
 DIVVS VR7 VR7 SR7
 DIVVS VR5 VR5 SR7
 DIVVS VR6 VR6 SR7
+LS SR7 SR0 26           # SR7 = 16 = input stride
 SVWS VR4 SR4 SR1        # Re(y[i * 32]) = Re(y_even) + Re(W^0_128 * y_odd)
 ADD SR4 SR4 SR7         # SR4 = Re(y_1[16])
 SVWS VR7 SR4 SR1        # Re(y[i * 32 + 16]) = Re(y_even) - Re(W^0_128 * y_odd)
@@ -574,7 +575,6 @@ SVWS VR6 SR4 SR1        # Im(y[i * 32]) = Im(y_even) + Im(W^0_128 * y_odd)
 LS SR1 SR0 1            # SR1 = 1
 LS SR6 SR0 30           # SR6 = k
 ADD SR6 SR6 SR1         # k += 1
-LS SR7 SR0 26           # SR7 = 16 = input stride
 BGE SR6 SR7 10          # exit loop if k >= 16
 
 # loop overhead
@@ -586,7 +586,7 @@ LS SR1 SR0 1            # SR1 = 1
 SUB SR4 SR4 SR6         # SR4 = pointer to Re(y_1[0])
 ADD SR4 SR4 SR1         # SR5 = 897 = pointer to Re(y_1[1])
 ADD SR3 SR3 SR1         # SR3 = 705 = pointer to Re(y_0[65])
-BEQ SR0 SR0 -48         # go to start of loop
+BEQ SR0 SR0 -46         # go to start of loop
 
 # sixth stage
 # Now, we have two 64-point FFTs
@@ -655,6 +655,7 @@ DIVVS VR4 VR4 SR7
 DIVVS VR7 VR7 SR7
 DIVVS VR5 VR5 SR7
 DIVVS VR6 VR6 SR7
+LS SR7 SR0 11           # SR7 = 32 = input stride
 SVWS VR4 SR4 SR1        # Re(y[i * 64]) = Re(y_even) + Re(W^0_128 * y_odd)
 ADD SR4 SR4 SR7         # SR4 = Re(y_1[16])
 SVWS VR7 SR4 SR1        # Re(y[i * 64 + 16]) = Re(y_even) - Re(W^0_128 * y_odd)
@@ -667,7 +668,6 @@ SVWS VR6 SR4 SR1        # Im(y[i * 64]) = Im(y_even) + Im(W^0_128 * y_odd)
 LS SR1 SR0 1            # SR1 = 1
 LS SR6 SR0 33           # SR6 = k
 ADD SR6 SR6 SR1         # k += 1
-LS SR7 SR0 11           # SR7 = 32 = input stride
 BGE SR6 SR7 10          # exit loop if k >= 32
 
 # loop overhead
@@ -679,7 +679,7 @@ LS SR1 SR0 1            # SR1 = 1
 SUB SR4 SR4 SR6         # SR4 = pointer to Re(y_1[0])
 ADD SR4 SR4 SR1         # SR5 = 897 = pointer to Re(y_1[1])
 ADD SR3 SR3 SR1         # SR3 = 705 = pointer to Re(y_0[65])
-BEQ SR0 SR0 -48         # go to start of loop
+BEQ SR0 SR0 -46         # go to start of loop
 
 # final stage
 # y = fft(x, 128)
@@ -746,6 +746,7 @@ DIVVS VR4 VR4 SR7
 DIVVS VR7 VR7 SR7
 DIVVS VR5 VR5 SR7
 DIVVS VR6 VR6 SR7
+LS SR7 SR0 3            # SR7 = 64 = input stride
 SVWS VR4 SR4 SR1        # Re(y[i]) = Re(y_even) + Re(W^0_128 * y_odd)
 ADD SR4 SR4 SR7         # SR4 = Re(y_1[16])
 SVWS VR7 SR4 SR1        # Re(y[i + 64]) = Re(y_even) - Re(W^0_128 * y_odd)
@@ -758,7 +759,6 @@ SVWS VR6 SR4 SR1        # Im(y[i]) = Im(y_even) + Im(W^0_128 * y_odd)
 LS SR1 SR0 1            # SR1 = 1
 LS SR6 SR0 35           # SR6 = k
 ADD SR6 SR6 SR1         # k += 1
-LS SR7 SR0 3            # SR7 = 64 = input stride
 BGE SR6 SR7 10          # exit loop if k >= 64
 
 # loop overhead
@@ -770,6 +770,6 @@ LS SR1 SR0 1            # SR1 = 1
 SUB SR4 SR4 SR6         # SR4 = pointer to Re(y_1[0])
 ADD SR4 SR4 SR1         # SR5 = 897 = pointer to Re(y_1[1])
 ADD SR3 SR3 SR1         # SR3 = 705 = pointer to Re(y_0[65])
-BEQ SR0 SR0 -48         # go to start of loop
+BEQ SR0 SR0 -46         # go to start of loop
 
 HALT

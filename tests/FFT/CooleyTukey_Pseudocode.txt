@@ -13,7 +13,6 @@ end
 
 # Pseudocode for the Cooley-Tukey N-point FFT algorithm, unrolled for N = 128
 # We have 7 stages, each with a different number of FFTs
-
 y = fft(x, 128)
 y_even = fft(x[0], x[2], ..., x[126], 64)
 y_odd = fft(x[1], x[3], ..., x[127], 64)
@@ -21,57 +20,51 @@ for k = 0 to 63
     y[k] = y_even[k] + W^k_128 * y_odd[k]
     y[k + 64] = y_even[k] - W^k_128 * y_odd[k]
 end
-
 # Now, we have two 64-point FFTs
 for i = 0 to 1
     y_even = fft(x[i], x[i + 4], ..., x[i + 124], 32)
     y_odd = fft(x[i + 2], x[i + 6], ..., x[i + 126], 32)
     for k = 0 to 31
-        y[i * 64 + k] = y_even[k] + W^k_128 * y_odd[k]
-        y[i * 64 + k + 32] = y_even[k] - W^k_128 * y_odd[k]
+        y[i * 64 + k] = y_even[k] + W^2k_128 * y_odd[k]
+        y[i * 64 + k + 32] = y_even[k] - W^2k_128 * y_odd[k]
     end
 end
-
 # The following steps are repeated for each of the 4 32-point FFTs
 for i = 0 to 3
     y_even = fft(x[i], x[i + 8], ..., x[i + 120], 16)
     y_odd = fft(x[i + 4], x[i + 12], ..., x[i + 124], 16)
     for k = 0 to 15
-        y[i * 32 + k] = y_even[k] + W^k_128 * y_odd[k]
-        y[i * 32 + k + 16] = y_even[k] - W^k_128 * y_odd[k]
+        y[i * 32 + k] = y_even[k] + W^4k_128 * y_odd[k]
+        y[i * 32 + k + 16] = y_even[k] - W^4k_128 * y_odd[k]
     end
 end
-
 # 8 16-point FFTs
 for i = 0 to 7
     y_even = fft(x[i], x[i + 16], ..., x[i + 112], 8)
     y_odd = fft(x[i + 8], x[i + 24], ..., x[i + 120], 8)
     for k = 0 to 7
-        y[i * 16 + k] = y_even[k] + W^k_128 * y_odd[k]
-        y[i * 16 + k + 8] = y_even[k] - W^k_128 * y_odd[k]
+        y[i * 16 + k] = y_even[k] + W^8k_128 * y_odd[k]
+        y[i * 16 + k + 8] = y_even[k] - W^8k_128 * y_odd[k]
     end
 end
-
 # 16 8-point FFTs
 for i = 0 to 15
     y_even = fft(x[i], x[i + 32], ..., x[i + 96], 4)
     y_odd = fft(x[i + 16], x[i + 48], ..., x[i + 112], 4)
     for k = 0 to 3
-        y[i * 8 + k] = y_even[k] + W^k_128 * y_odd[k]
-        y[i * 8 + k + 4] = y_even[k] - W^k_128 * y_odd[k]
+        y[i * 8 + k] = y_even[k] + W^16k_128 * y_odd[k]
+        y[i * 8 + k + 4] = y_even[k] - W^16k_128 * y_odd[k]
     end
 end
-
 # 32 4-point FFTs
 for i = 0 to 31
     y_even = fft(x[i], x[i + 64], 2)
     y_odd = fft(x[i + 32], x[i + 96], 2)
     for k = 0 to 1
-        y[i * 4 + k] = y_even[k] + W^k_128 * y_odd[k]
-        y[i * 4 + k + 2] = y_even[k] - W^k_128 * y_odd[k]
+        y[i * 4 + k] = y_even[k] + W^32k_128 * y_odd[k]
+        y[i * 4 + k + 2] = y_even[k] - W^32k_128 * y_odd[k]
     end
 end
-
 # Finally 64 2-point FFTs, which is where we compute the base case
 for i = 0 to 63
     y_even = fft(x[i], 1)

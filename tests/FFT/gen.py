@@ -26,12 +26,11 @@ def gen():
         
         # write randomly generated input
         for _ in range(256):
-            out_file.write(str(randint(-10, 10)) + '\n')
+            out_file.write(str(randint(-1000, 1000)) + '\n')
         
         # write twiddles
         (re_fcts, im_fcts) = parse_twiddle()
         out_file.writelines(re_fcts)
         out_file.writelines(im_fcts)
-
 
 gen()

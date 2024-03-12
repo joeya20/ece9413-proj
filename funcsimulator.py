@@ -52,7 +52,7 @@ class DMEM(object):
     def checkIdx(self, idx):
         ''' Checks if the memory index is valid (within bounds) '''
         if idx < 0 or idx >= self.size:
-            raise ValueError('invalid DMEM index')
+            raise ValueError(f'invalid DMEM index: {idx}')
     
     def checkVal(self, val):
         if type(val) is list:
@@ -240,7 +240,7 @@ class Core():
         while (True):
             # fetch instruction
             instr = self.IMEM.Read(self.pc)
-            
+            # print(f'instr {self.pc}: {instr}')
             # decode and execute instruction
             # we assume valid instructions...
             decoded_instr = self.parseInstr(str(instr))

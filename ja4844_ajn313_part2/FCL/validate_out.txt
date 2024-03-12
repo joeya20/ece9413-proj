@@ -1,0 +1,2 @@
+dot product output valid: True
+FCL output valid: True

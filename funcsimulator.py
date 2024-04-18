@@ -364,11 +364,6 @@ class Core():
         for rf in self.RFs.values():
             rf.dump(iodir)
 
-    def update_len_reg(self, val):
-        if val < 0 or val > self.MVL:
-            raise ValueError('invalid length register val')
-        self.len_reg = val
-
     # Instruction 1 and 3
     def ___VV(self, vr1_idx, vr2_idx, vr3_idx, op):
         vr2 = self.RFs['VRF'].Read(vr2_idx)

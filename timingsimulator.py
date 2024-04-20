@@ -5,10 +5,14 @@ from queue import SimpleQueue
 import re
 
 '''TODO
+Frontend:
+1. Finish instruction decode
+2. data dependency checking
+3. implement queues -- define data to be stored in queues (depends on 2)
+Backend:
 1.1 Modify VDMEM to be banked
 1.2 Implement bank conflicts
-2.  Implement controller/control logic
-3.  define data to be stored in queues (depends on 2)
+2. Implement compute pipelines
 '''
 
 

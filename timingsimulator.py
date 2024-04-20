@@ -32,6 +32,39 @@ class SCALAR_OP_TYPE(IntEnum):
     SRA = 8
 
 
+class REGS(IntEnum):
+    ''' enum for registers '''
+    SR0 = 0
+    SR1 = 1
+    SR2 = 2
+    SR3 = 3
+    SR4 = 4
+    SR5 = 5
+    SR6 = 6
+    SR7 = 7
+    VR0 = 8
+    VR1 = 9
+    VR2 = 10
+    VR3 = 11
+    VR4 = 12
+    VR5 = 13
+    VR6 = 14
+    VR7 = 15
+
+
+# gets created at decode stage
+class Instruction(object):
+    def __init__(self, instr_str) -> None:
+        # parse instruction
+        self.op = None
+        self.operand1 = None
+        # stores second operand for CI
+        self.operand2 = None
+        # stores address for LSI
+        self.address = None
+        self.dest = None
+
+
 # base class for dispatch queues
 class ExecQueue(object):
     def __init__(self, lanes, depth) -> None:
@@ -55,7 +88,7 @@ class ComputeUnit(object):
     def __init__(self, latency, OP_TYPE: VECTOR_OP_TYPE) -> None:
         self.latency = latency
         self.TYPE = OP_TYPE
-    
+
     def compute(self):
         '''TODO: define operands'''
         match self.TYPE:
@@ -73,11 +106,32 @@ class ComputeUnit(object):
 
 
 class BusyBoard(object):
-    '''TODO '''
-    def __init__(self) -> None:
-        pass
+    ''' DONE '''
+    def __init__(self, srf_size=8, vrf_size=8) -> None:
+        # vrf and srf size are ]hardcoded to a max of 8 each due to enum
+        self.board = [False for _ in range(srf_size + vrf_size)]
 
+    def setBusy(self, reg_enum):
+        ''' sets the busy bit for the register 
+        throws exception if already busy
+        '''
+        if self[reg_enum.value]:
+            raise ValueError(f'register {reg_enum.name} already busy')
+        self[reg_enum.value] = True
 
+    def clear(self, reg_enum):
+        ''' clears the busy bit for the register 
+        throws exception if already free
+        '''
+        if not self[reg_enum.value]:
+            raise ValueError(f'register {reg_enum.name} already free')
+        self[reg_enum.value] = False
+
+    def isBusy(self, reg_enum):
+        ''' returns True if the register is busy '''
+        return self.board[reg_enum.value]
+    
+        
 class Config(object):
     def __init__(self, iodir):
         self.filepath = os.path.abspath(os.path.join(iodir, "Config.txt"))
@@ -171,6 +225,22 @@ class DMEM(object):
             raise
 
 
+class VDMEM(DMEM):
+    def __init__(self, name, iodir, addressLen, numBanks):
+        super().__init__(name, iodir, addressLen)
+        self.numBanks = numBanks
+
+        
+    def Read(self, idx):
+        return super().Read(idx)
+    
+    def Write(self, idx, val):
+        return super().Write(idx, val)
+    
+
+class SDMEM(DMEM):
+    
+    
 class RegisterFile(object):
     def __init__(self, name, count, length=1, size=32):
         self.name       = name

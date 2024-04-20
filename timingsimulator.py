@@ -15,6 +15,32 @@ Backend:
 2. Implement compute pipelines
 '''
 
+# class OP_TYPE(IntEnum):
+#     ''' enum for vector arithmetic operations '''
+#     # vector compute instructions
+#     VECTOR_ADD = 1 # ADDVV and ADDVS
+#     VECTOR_SUB = 2 # SUBVV and SUBVS
+#     VECTOR_MUL = 3 # MULVV and MULVS
+#     VECTOR_DIV = 4 # DIVVV and DIVVS
+#     CI = VECTOR_ADD | VECTOR_SUB | VECTOR_MUL | VECTOR_DIV
+#     # vector load/store instructions
+#     LV = 5
+#     LVWS = 6
+#     LVI = 7
+#     SV = 8
+#     SVWS = 9
+#     SVI = 10
+#     LSI = LV | LVWS | LVI | SV | SVWS | SVI
+#     # scalar operations
+#     ADD = 1
+#     SUB = 2
+#     AND = 3
+#     OR  = 4
+#     XOR = 5
+#     SRL = 6
+#     SLL = 7
+#     SRA = 8
+
 
 class VECTOR_OP_TYPE(IntEnum):
     ''' enum for vector arithmetic operations '''
@@ -58,6 +84,7 @@ class REGS(IntEnum):
 
 # gets created at decode stage
 class Instruction(object):
+    ''' TODO '''
     def __init__(self, instr_str) -> None:
         # parse instruction
         self.op = None
@@ -70,43 +97,62 @@ class Instruction(object):
 
 
 # base class for dispatch queues
-class ExecQueue(object):
-    def __init__(self, lanes, depth) -> None:
-        self.lanes = lanes
+class DispatchQueue(object):
+    ''' DONE '''
+    def __init__(self, depth) -> None:
         self.depth = depth
-        self.queue = SimpleQueue()
-    
+        self.queue = []
+        self.size = 0
+
+    def isFull(self):
+        return self.size >= self.depth
+
+    def isEmpty(self):
+        return self.size == 0
+
     def getHead(self):
         '''returns None if the queue is empty'''
-        if self.queue.empty():
+        if self.size == 0:
             return None
-        return self.queue.get(block=False)
+        self.size -= 1
+        return self.queue.pop()
 
     # TODO: what do we store in queues? define instr data type
     def addToQueue(self, instr):
-        self.queue.put(instr)
+        if self.isFull():
+            raise Exception('queue is full')
+        self.size += 1
+        self.queue.append(instr)
 
 
-class ComputeUnit(object):
+class ComputePipeline(object):
     '''base class for vector compute unit (ADD,SUB,MUL,DIV)'''
-    def __init__(self, latency, OP_TYPE: VECTOR_OP_TYPE) -> None:
+    def __init__(self, latency, lanes, OP_TYPE: VECTOR_OP_TYPE) -> None:
+        self.lanes = lanes
         self.latency = latency
-        self.TYPE = OP_TYPE
+        self.type = OP_TYPE
+        self.busy = False
+        self.instr = None
+        self.cycles_needed = 0
 
-    def compute(self):
-        '''TODO: define operands'''
-        match self.TYPE:
-            case VECTOR_OP_TYPE.ADD:
-                return None
-            case VECTOR_OP_TYPE.SUB:
-                return None
-            case VECTOR_OP_TYPE.MUL:
-                return None
-            case VECTOR_OP_TYPE.DIV:
-                return None
-            case _:
-                # practically impossible but whatevs
-                raise ValueError(f'Invalid Compute Unit Type: {self.TYPE}')
+    def isBusy(self):
+        return self.busy
+
+    def acceptInstr(self, instr):
+        self.instr = instr
+        self.cycles_needed = \
+            instr.num_operations / self.lanes * self.latency if instr.num_operations % self.lanes == 0 \
+            else (instr.num_operations // self.lanes + 1) * self.latency
+        self.busy = True
+
+    def finishedInstr(self):
+        self.busy = False
+        # TODO: update state
+
+    def update(self):
+        self.cycles_needed -= 1
+        if self.counter == 0:
+            self.finishedInstr()
 
 
 class BusyBoard(object):
@@ -116,7 +162,7 @@ class BusyBoard(object):
         self.board = [False for _ in range(srf_size + vrf_size)]
 
     def setBusy(self, regs: list[REGS]):
-        ''' sets the busy bit for the registers in regs 
+        ''' sets the busy bit for the registers in regs
         throws exception if already busy
         '''
         for reg in regs:
@@ -137,7 +183,16 @@ class BusyBoard(object):
         ''' returns True if the register is busy '''
         return [self.board[reg.value] for reg in regs]
 
-        
+
+class Decoder(object):
+    def __init__(self) -> None:
+        self.re_pattern = re.compile(r"(?:^(?P<instruction>\w+)(?:[ ]+(?P<operand1>\w+))?(?:[ ]+(?P<operand2>\w+))?(?:[ ]+(?P<operand3>[-\w]+))?[ ]*(?P<inline_comment>#.*)?$)|(?:^(?P<comment_line>[ ]*?#.*)$)|(?P<empty_line>^(?<!.)$|(?:^[ ]+$)$)")
+
+    def parseInstr(self, instr: str):
+        # TODO
+        return None
+
+
 class Config(object):
     def __init__(self, iodir):
         self.filepath = os.path.abspath(os.path.join(iodir, "Config.txt"))
@@ -236,7 +291,6 @@ class VDMEM(DMEM):
         super().__init__(name, iodir, addressLen)
         self.numBanks = numBanks
 
-        
     def Read(self, idx):
         return super().Read(idx)
     
@@ -247,7 +301,7 @@ class VDMEM(DMEM):
 class SDMEM(DMEM):
     pass
 
-    
+
 class RegisterFile(object):
     def __init__(self, name, count, length=1, size=32):
         self.name       = name
@@ -351,14 +405,11 @@ class Core():
         self.len_reg = self.MVL
         self.mask_reg = [True for _ in range(self.MVL)]
         self.pc = 0
-        self.data_queue = ExecQueue(config['numLanes'], config['dataQueueDepth'])
-        self.compute_queue = ExecQueue(config['numLanes'], config['computeQueueDepth'])
-        self.re_pattern = re.compile("(?:^(?P<instruction>\w+)(?:[ ]+(?P<operand1>\w+))?(?:[ ]+(?P<operand2>\w+))?(?:[ ]+(?P<operand3>[-\w]+))?[ ]*(?P<inline_comment>#.*)?$)|(?:^(?P<comment_line>[ ]*?#.*)$)|(?P<empty_line>^(?<!.)$|(?:^[ ]+$)$)")
-        self.cycle_count = 0
-
-    def parseInstr(self, instr: str):
-        # TODO
-        return None
+        self.data_queue = DispatchQueue(config['dataQueueDepth'])
+        self.compute_queue = DispatchQueue(config['computeQueueDepth'])
+        self.busyboard = BusyBoard()
+        self.decoder = Decoder()
+        self.cycle_count = 1 # we start cycle count at 1 because we assume instr[0] has already been fetched
 
     def update_len_reg(self, val):
         if val < 0 or val > self.MVL:
@@ -366,28 +417,56 @@ class Core():
         self.len_reg = val
 
     def run(self):
-        while(True):
-            # IF stage
-            instr = self.IMEM.Read(self.pc)
-            
-            # ID stage
-            
+        instr = self.IMEM.Read(self.pc)
+        while True:
             # EX stage (backend)
-            
-            
-            break # Replace this line with your code.
+
+            # ID stage
+            stall_frontend = False
+            # first decode instruction
+            decoded_instr = self.decoder.decode(instr)
+            # then check data dependence
+            if self.busyboard.isBusy(decoded_instr.regs):
+                stall_frontend = True
+            # then check structural dependence
+            match decoded_instr.instr_type:
+                case "HALT": # for HALT we just stall the frontend (no more instructions to fetch) and wait until all instructions are executed
+                    stall_frontend = True
+                    if self.data_queue.isEmpty() and self.compute_queue.isEmpty(): # and self. need to check backend pipelines
+                        break
+                case "BRANCH": # for halt, we just continue to the next instruction
+                    self.pc += 1
+                    self.cycle_count += 1
+                    continue
+                case "LSI":
+                    if self.data_queue.isFull():
+                        stall_frontend = True
+                    else:
+                        self.data_queue.addToQueue(decoded_instr)
+                case "CI":
+                    if self.compute_queue.isFull():
+                        stall_frontend = True
+                    else:
+                        self.compute_queue.addToQueue(decoded_instr)
+                case "SI":
+                    pass
+                
+            # IF stage
+            if not stall_frontend:
+                self.pc += 1
+            self.cycle_count += 1
 
     # Instruction 7
     def CVM(self):
         self.mask_reg = [True for _ in range(self.MVL)]
-    
+
     # Instruction 8
     def POP(self, sr1_idx):
         cnt = 0
         for mask_bit in self.mask_reg:
             cnt += int(mask_bit)
         self.RFs['SRF'].Write(sr1_idx, cnt)
-    
+
     # Vector Length Register Operations
     # Instruction 9
     def MTCL(self, sr1_idx):
@@ -462,13 +541,13 @@ if __name__ == "__main__":
     # Parse SMEM
     sdmem = DMEM("SDMEM", iodir, 13) # 32 KB is 2^15 bytes = 2^13 K 32-bit words.
     # Parse VMEM
-    vdmem = DMEM("VDMEM", iodir, 17) # 512 KB is 2^19 bytes = 2^17 K 32-bit words. 
+    vdmem = DMEM("VDMEM", iodir, 17) # 512 KB is 2^19 bytes = 2^17 K 32-bit words.
 
     # Create Vector Core
     vcore = Core(imem, sdmem, vdmem, config)
 
     # Run Core
-    vcore.run()   
+    vcore.run()
     vcore.dumpregs(iodir)
 
     sdmem.dump()

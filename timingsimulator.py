@@ -111,26 +111,28 @@ class BusyBoard(object):
         # vrf and srf size are ]hardcoded to a max of 8 each due to enum
         self.board = [False for _ in range(srf_size + vrf_size)]
 
-    def setBusy(self, reg_enum):
-        ''' sets the busy bit for the register 
+    def setBusy(self, regs: list[REGS]):
+        ''' sets the busy bit for the registers in regs 
         throws exception if already busy
         '''
-        if self[reg_enum.value]:
-            raise ValueError(f'register {reg_enum.name} already busy')
-        self[reg_enum.value] = True
+        for reg in regs:
+            if self.board[reg.value]:
+                raise ValueError(f'register {reg.name} already busy')
+            self.board[reg.value] = True
 
-    def clear(self, reg_enum):
-        ''' clears the busy bit for the register 
+    def clear(self, regs: list[REGS]):
+        ''' clears the busy bit for the registers in regs
         throws exception if already free
         '''
-        if not self[reg_enum.value]:
-            raise ValueError(f'register {reg_enum.name} already free')
-        self[reg_enum.value] = False
+        for reg in regs:
+            if not self.board[reg.value]:
+                raise ValueError(f'register {reg.name} already free')
+            self.board[reg.value] = False
 
-    def isBusy(self, reg_enum):
+    def isBusy(self, regs: list[REGS]):
         ''' returns True if the register is busy '''
-        return self.board[reg_enum.value]
-    
+        return [self.board[reg.value] for reg in regs]
+
         
 class Config(object):
     def __init__(self, iodir):
@@ -239,7 +241,8 @@ class VDMEM(DMEM):
     
 
 class SDMEM(DMEM):
-    
+    pass
+
     
 class RegisterFile(object):
     def __init__(self, name, count, length=1, size=32):

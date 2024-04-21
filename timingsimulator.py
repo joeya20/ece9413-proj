@@ -53,18 +53,88 @@ class REGS(IntEnum):
     VR7 = 15
 
 
+class Config(object):
+    def __init__(self, iodir):
+        self.filepath = os.path.abspath(os.path.join(iodir, "Config.txt"))
+        self.parameters = {} # dictionary of parameter name: value as strings.
+
+        try:
+            with open(self.filepath, 'r') as conf:
+                self.parameters = {line.split('=')[0].strip(): line.split('=')[1].split('#')[0].strip() for line in conf.readlines() if not (line.startswith('#') or line.strip() == '')}
+            print("Config - Parameters loaded from file:", self.filepath)
+            print("Config parameters:", self.parameters)
+        except Exception as e:
+            print("Config - ERROR: Couldn't open file in path:", self.filepath)
+            print("Exception:", str(e))
+            raise
+
+
+# ************************ Frontend *******************************
 # gets created at decode stage
 class Instruction(object):
     ''' TODO '''
-    def __init__(self, instr_str) -> None:
-        # parse instruction
+    def __init__(self) -> None:
+        self.num_cycles = None
         self.op = None
         self.operand1 = None
-        # stores second operand for CI
         self.operand2 = None
-        # stores address for LSI
+        self.operand3 = None
         self.address = None
-        self.dest = None
+        self.regs = []
+        self.pipeline_needed = None
+        self.type = None
+
+
+# Instruction Decoder
+class Decoder(object):
+    '''TODO: add support for new LSI instruction format and compute num_cycles'''
+    def __init__(self) -> None:
+        self.re_pattern = re.compile(r"(?:^(?P<instruction>\w+)(?:[ ]+(?P<operand1>\w+))?(?:[ ]+(?P<operand2>\w+))?(?:[ ]+(?P<operand3>[-\w]+))?[ ]*(?P<inline_comment>#.*)?$)|(?:^(?P<comment_line>[ ]*?#.*)$)|(?P<empty_line>^(?<!.)$|(?:^[ ]+$)$)")
+
+    def decode(self, instr_str: str, len_reg, mask_reg):
+        instr = Instruction()
+        instr_match = self.re_pattern.search(instr_str)
+        if instr_match is None:
+            raise Exception(f'Could not parse instruction: {instr_str}')
+        instr_dict = instr_match.groupdict()
+        instr.op = instr_dict['instruction']
+        # parse operands
+        instr.operand1 = instr_dict['operand1']
+        instr.operand2 = instr_dict['operand2']
+        instr.operand3 = instr_dict['operand3']
+        if instr.operand1 is not None:
+            instr.regs.append(REGS[instr.operand1])
+        if instr.operand2 is not None:
+            instr.regs.append(REGS[instr.operand2])
+        if instr.operand3 is not None:
+            instr.regs.append(REGS[instr.operand3])
+        # BRANCHES
+        if instr.op in ['BEQ', 'BNE', 'BLT', 'BLE', 'BGT', 'VGE']:
+            instr.type = 'BRANCH'
+        # HALT
+        elif instr.op == 'HALT':
+            instr.type = 'HALT'
+        # SI instructions
+        elif instr.op in ['ADD', 'SUB', 'AND', 'OR', 'XOR', 'SLL', 'SRL', 'SRA', 'LS', 'SS', 'CVM', 'POP', 'MTCL', 'MFCL']:
+            instr.type = 'SI'
+        # CI instructions
+        elif instr.op in ['UNPACKLO', 'UNPACKHI', 'PACKHI', 'PACKLO']:
+            instr.type = 'CI'
+            instr.pipeline_needed = 'Vshuffle'
+        elif instr.op in ['ADDVV', 'SUBVV', 'ADDVS', 'SUBVS']:
+            instr.type = 'CI'
+            instr.pipeline_needed = 'Vadd'
+        elif instr.op in ['MULVV', 'MULVS']:
+            instr.type = 'CI'
+            instr.pipeline_needed = 'Vmul'
+        elif instr.op in ['DIVVV', 'DIVVS']:
+            instr.type = 'CI'
+            instr.pipeline_needed = 'Vdiv'
+        # LSI instructions
+        elif instr.op in ['LV', 'LVWS', 'LVI', 'SV', 'SVWS', 'SVI']:
+            instr.type = 'LSI'
+
+        return instr
 
 
 # base class for dispatch queues
@@ -101,35 +171,6 @@ class DispatchQueue(object):
         self.queue.append(instr)
 
 
-class ComputePipeline(object):
-    '''base class for vector compute unit (ADD,SUB,MUL,DIV)'''
-    def __init__(self, type, latency, lanes) -> None:
-        self.latency = latency
-        self.type = type
-        self.busy = False
-        self.instr = None
-        self.cycles_needed = 0
-
-    def isBusy(self):
-        return self.busy
-
-    def acceptInstr(self, instr):
-        self.instr = instr
-        self.cycles_needed = \
-            instr.num_operations / self.lanes * self.latency if instr.num_operations % self.lanes == 0 \
-            else (instr.num_operations // self.lanes + 1) * self.latency
-        self.busy = True
-
-    def finishedInstr(self):
-        self.busy = False
-        # TODO: update state
-
-    def update(self):
-        self.cycles_needed -= 1
-        if self.counter == 0:
-            self.finishedInstr()
-
-
 class BusyBoard(object):
     ''' DONE '''
     def __init__(self, srf_size=8, vrf_size=8) -> None:
@@ -159,32 +200,6 @@ class BusyBoard(object):
         return [self.board[reg.value] for reg in regs]
 
 
-class Decoder(object):
-    '''TODO: add support for new LSI instruction format'''
-    def __init__(self) -> None:
-        self.re_pattern = re.compile(r"(?:^(?P<instruction>\w+)(?:[ ]+(?P<operand1>\w+))?(?:[ ]+(?P<operand2>\w+))?(?:[ ]+(?P<operand3>[-\w]+))?[ ]*(?P<inline_comment>#.*)?$)|(?:^(?P<comment_line>[ ]*?#.*)$)|(?P<empty_line>^(?<!.)$|(?:^[ ]+$)$)")
-        
-    def decode(self, instr_str: str):
-        instr = Instruction(instr_str)
-        return instr
-
-
-class Config(object):
-    def __init__(self, iodir):
-        self.filepath = os.path.abspath(os.path.join(iodir, "Config.txt"))
-        self.parameters = {} # dictionary of parameter name: value as strings.
-
-        try:
-            with open(self.filepath, 'r') as conf:
-                self.parameters = {line.split('=')[0].strip(): line.split('=')[1].split('#')[0].strip() for line in conf.readlines() if not (line.startswith('#') or line.strip() == '')}
-            print("Config - Parameters loaded from file:", self.filepath)
-            print("Config parameters:", self.parameters)
-        except Exception as e:
-            print("Config - ERROR: Couldn't open file in path:", self.filepath)
-            print("Exception:", str(e))
-            raise
-
-
 class IMEM(object):
     def __init__(self, iodir):
         self.size = pow(2, 16) # Can hold a maximum of 2^16 instructions.
@@ -206,6 +221,36 @@ class IMEM(object):
             return self.instructions[idx]
         else:
             print("IMEM - ERROR: Invalid memory access at index: ", idx, " with memory size: ", self.size)
+
+
+# ************************ Backend *******************************
+class ComputePipeline(object):
+    '''base class for vector compute unit (ADD,SUB,MUL,DIV)'''
+    def __init__(self, type, latency, lanes) -> None:
+        self.latency = latency
+        self.type = type
+        self.busy = False
+        self.instr = None
+        self.cycles_needed = 0
+
+    def isBusy(self):
+        return self.busy
+
+    def acceptInstr(self, instr):
+        self.instr = instr
+        self.cycles_needed = \
+            instr.num_cycles / self.lanes * self.latency if instr.num_cycles % self.lanes == 0 \
+            else (instr.num_cycles // self.lanes + 1) * self.latency
+        self.busy = True
+
+    def finishedInstr(self):
+        self.busy = False
+        # TODO: update state
+
+    def update(self):
+        self.cycles_needed -= 1
+        if self.counter == 0:
+            self.finishedInstr()
 
 
 class DMEM(object):
@@ -406,9 +451,9 @@ class Core():
                 pipeline.update()
 
             # add instruction to compute pipeline if possible
-            queue_head = self.compute_queue.peek()
-            if queue_head is not None and not self.compute_pipelines[queue_head.pipeline_needed].isBusy():
-                self.compute_pipelines[queue_head.pipeline_needed].acceptInstr(queue_head)
+            curr_instr = self.compute_queue.peek()
+            if curr_instr is not None and not self.compute_pipelines[curr_instr.pipeline_needed].isBusy():
+                self.compute_pipelines[curr_instr.pipeline_needed].acceptInstr(curr_instr)
                 self.compute_queue.pop()
             # add instruction to data pipeline if possible
 
@@ -420,7 +465,7 @@ class Core():
             if self.busyboard.isBusy(decoded_instr.regs):
                 stall_frontend = True
             # then check structural dependence
-            match decoded_instr.instr_type:
+            match decoded_instr.type:
                 case "HALT": # for HALT we just stall the frontend (no more instructions to fetch) and wait until all instructions are executed
                     stall_frontend = True
                     if self.data_queue.isEmpty() and self.compute_queue.isEmpty() and not self.compute_pipelines['Vadd'].busy \
@@ -443,7 +488,7 @@ class Core():
                     continue
                 case "SI":
                     ''' ALL SI take 1 cycle '''
-                    match instr.op:
+                    match decoded_instr.op:
                         case "CVM":
                             self.CVM()
                         case "POP":
@@ -472,6 +517,10 @@ class Core():
                             self.scalarExec(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], SCALAR_OP_TYPE.SRL)
                         case "SRA":
                             self.scalarExec(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], SCALAR_OP_TYPE.SRA)
+                        case _:
+                            raise ValueError('invalid SI op:', decoded_instr.op)
+                case _:
+                    raise ValueError('invalid instr type:', str(decoded_instr.type))
             # IF stage
             if not stall_frontend:
                 self.pc += 1

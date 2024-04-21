@@ -1,45 +1,16 @@
 import os
 import argparse
 from enum import IntEnum
-from queue import SimpleQueue
 import re
 
 '''TODO
 Frontend:
 1. Finish instruction decode
-2. data dependency checking
-3. implement queues -- define data to be stored in queues (depends on 2)
 Backend:
 1.1 Modify VDMEM to be banked
 1.2 Implement bank conflicts
-2. Implement compute pipelines
+2. Implement compute pipelines (time busy)
 '''
-
-# class OP_TYPE(IntEnum):
-#     ''' enum for vector arithmetic operations '''
-#     # vector compute instructions
-#     VECTOR_ADD = 1 # ADDVV and ADDVS
-#     VECTOR_SUB = 2 # SUBVV and SUBVS
-#     VECTOR_MUL = 3 # MULVV and MULVS
-#     VECTOR_DIV = 4 # DIVVV and DIVVS
-#     CI = VECTOR_ADD | VECTOR_SUB | VECTOR_MUL | VECTOR_DIV
-#     # vector load/store instructions
-#     LV = 5
-#     LVWS = 6
-#     LVI = 7
-#     SV = 8
-#     SVWS = 9
-#     SVI = 10
-#     LSI = LV | LVWS | LVI | SV | SVWS | SVI
-#     # scalar operations
-#     ADD = 1
-#     SUB = 2
-#     AND = 3
-#     OR  = 4
-#     XOR = 5
-#     SRL = 6
-#     SLL = 7
-#     SRA = 8
 
 
 class VECTOR_OP_TYPE(IntEnum):
@@ -110,15 +81,20 @@ class DispatchQueue(object):
     def isEmpty(self):
         return self.size == 0
 
-    def getHead(self):
+    def peek(self):
+        '''returns None if the queue is empty'''
+        if self.size == 0:
+            return None
+        return self.queue[0]
+
+    def pop(self):
         '''returns None if the queue is empty'''
         if self.size == 0:
             return None
         self.size -= 1
-        return self.queue.pop()
+        return self.queue.pop(0)
 
-    # TODO: what do we store in queues? define instr data type
-    def addToQueue(self, instr):
+    def push(self, instr):
         if self.isFull():
             raise Exception('queue is full')
         self.size += 1
@@ -127,10 +103,9 @@ class DispatchQueue(object):
 
 class ComputePipeline(object):
     '''base class for vector compute unit (ADD,SUB,MUL,DIV)'''
-    def __init__(self, latency, lanes, OP_TYPE: VECTOR_OP_TYPE) -> None:
-        self.lanes = lanes
+    def __init__(self, type, latency, lanes) -> None:
         self.latency = latency
-        self.type = OP_TYPE
+        self.type = type
         self.busy = False
         self.instr = None
         self.cycles_needed = 0
@@ -185,12 +160,13 @@ class BusyBoard(object):
 
 
 class Decoder(object):
+    '''TODO: add support for new LSI instruction format'''
     def __init__(self) -> None:
         self.re_pattern = re.compile(r"(?:^(?P<instruction>\w+)(?:[ ]+(?P<operand1>\w+))?(?:[ ]+(?P<operand2>\w+))?(?:[ ]+(?P<operand3>[-\w]+))?[ ]*(?P<inline_comment>#.*)?$)|(?:^(?P<comment_line>[ ]*?#.*)$)|(?P<empty_line>^(?<!.)$|(?:^[ ]+$)$)")
-
-    def parseInstr(self, instr: str):
-        # TODO
-        return None
+        
+    def decode(self, instr_str: str):
+        instr = Instruction(instr_str)
+        return instr
 
 
 class Config(object):
@@ -409,6 +385,12 @@ class Core():
         self.compute_queue = DispatchQueue(config['computeQueueDepth'])
         self.busyboard = BusyBoard()
         self.decoder = Decoder()
+        self.compute_pipelines = {
+            'Vadd': ComputePipeline('Vadd', config['pipelineDepthAdd'], config['numLanes'], self.RFs['VRF']),
+            'Vmul': ComputePipeline('Vmul', config['pipelineDepthMul'], config['numLanes'], self.RFs['VRF']),
+            'Vdiv': ComputePipeline('Vdiv', config['pipelineDepthDiv'], config['numLanes'], self.RFs['VRF']),
+            'Vshuffle': ComputePipeline('Vshu', config['pipelineDepthShuffle'], config['numLanes'], self.RFs['VRF'])
+        }
         self.cycle_count = 1 # we start cycle count at 1 because we assume instr[0] has already been fetched
 
     def update_len_reg(self, val):
@@ -420,11 +402,20 @@ class Core():
         instr = self.IMEM.Read(self.pc)
         while True:
             # EX stage (backend)
+            for pipeline in self.compute_pipelines.values():
+                pipeline.update()
+
+            # add instruction to compute pipeline if possible
+            queue_head = self.compute_queue.peek()
+            if queue_head is not None and not self.compute_pipelines[queue_head.pipeline_needed].isBusy():
+                self.compute_pipelines[queue_head.pipeline_needed].acceptInstr(queue_head)
+                self.compute_queue.pop()
+            # add instruction to data pipeline if possible
 
             # ID stage
             stall_frontend = False
             # first decode instruction
-            decoded_instr = self.decoder.decode(instr)
+            decoded_instr = self.decoder.decode(instr, self.len_reg, self.mask_reg)
             # then check data dependence
             if self.busyboard.isBusy(decoded_instr.regs):
                 stall_frontend = True
@@ -432,25 +423,55 @@ class Core():
             match decoded_instr.instr_type:
                 case "HALT": # for HALT we just stall the frontend (no more instructions to fetch) and wait until all instructions are executed
                     stall_frontend = True
-                    if self.data_queue.isEmpty() and self.compute_queue.isEmpty(): # and self. need to check backend pipelines
+                    if self.data_queue.isEmpty() and self.compute_queue.isEmpty() and not self.compute_pipelines['Vadd'].busy \
+                        and not self.compute_pipelines['Vmul'].busy and not self.compute_pipelines['Vdiv'].busy \
+                            and not self.compute_pipelines['Vshuffle'].busy:
                         break
-                case "BRANCH": # for halt, we just continue to the next instruction
-                    self.pc += 1
-                    self.cycle_count += 1
-                    continue
                 case "LSI":
                     if self.data_queue.isFull():
                         stall_frontend = True
                     else:
-                        self.data_queue.addToQueue(decoded_instr)
+                        self.data_queue.push(decoded_instr)
                 case "CI":
                     if self.compute_queue.isFull():
                         stall_frontend = True
                     else:
-                        self.compute_queue.addToQueue(decoded_instr)
+                        self.compute_queue.push(decoded_instr)
+                case "BRANCH": # for branch, we just continue to the next instruction
+                    self.pc += 1
+                    self.cycle_count += 1
+                    continue
                 case "SI":
-                    pass
-                
+                    ''' ALL SI take 1 cycle '''
+                    match instr.op:
+                        case "CVM":
+                            self.CVM()
+                        case "POP":
+                            self.POP(decoded_instr['operand1'])
+                        case "MTCL":
+                            self.MTCL(decoded_instr['operand1'])
+                        case "MFCL":
+                            self.MFCL(decoded_instr['operand1'])
+                        case "LS":
+                            self.LS(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'])
+                        case "SS":
+                            self.SS(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'])
+                        case "ADD":
+                            self.scalarExec(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], SCALAR_OP_TYPE.ADD)
+                        case "SUB":
+                            self.scalarExec(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], SCALAR_OP_TYPE.SUB)
+                        case "AND":
+                            self.scalarExec(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], SCALAR_OP_TYPE.AND)
+                        case "OR":
+                            self.scalarExec(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], SCALAR_OP_TYPE.OR)
+                        case "XOR":
+                            self.scalarExec(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], SCALAR_OP_TYPE.XOR)
+                        case "SLL":
+                            self.scalarExec(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], SCALAR_OP_TYPE.SLL)
+                        case "SRL":
+                            self.scalarExec(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], SCALAR_OP_TYPE.SRL)
+                        case "SRA":
+                            self.scalarExec(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], SCALAR_OP_TYPE.SRA)
             # IF stage
             if not stall_frontend:
                 self.pc += 1

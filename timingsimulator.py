@@ -91,7 +91,7 @@ class Decoder(object):
     def __init__(self) -> None:
         self.re_pattern = re.compile(r"(?:^(?P<instruction>\w+)(?:[ ]+(?P<operand1>\w+))?(?:[ ]+(?P<operand2>\w+))?(?:[ ]+(?P<operand3>[-\w]+))?[ ]*(?P<inline_comment>#.*)?$)|(?:^(?P<comment_line>[ ]*?#.*)$)|(?P<empty_line>^(?<!.)$|(?:^[ ]+$)$)")
 
-    def decode(self, instr_str: str, len_reg, mask_reg):
+    def decode(self, instr_str: str, len_reg, mask_reg, SRF):
         instr = Instruction()
         instr_match = self.re_pattern.search(instr_str)
         if instr_match is None:
@@ -226,26 +226,93 @@ class IMEM(object):
 # ************************ Backend *******************************
 class ComputePipeline(object):
     '''base class for vector compute unit (ADD,SUB,MUL,DIV)'''
-    def __init__(self, type, latency, lanes) -> None:
+    def __init__(self, type, latency, lanes, VRF) -> None:
         self.latency = latency
         self.type = type
         self.busy = False
         self.instr = None
         self.cycles_needed = 0
+        self.VRF = VRF
+        self.lanes = lanes
+
+    # Instruction 1 and 3
+    def ___VV(self, vr1_idx, vr2_idx, vr3_idx, op):
+        vr2 = self.VRF.Read(vr2_idx)
+        vr3 = self.VRF.Read(vr3_idx)
+        match op:
+            case self.VECTOR_OP_TYPE.ADD:
+                for i in range(self.len_reg):
+                    if self.mask_reg[i]:
+                        self.VRF.write_vec_element(vr1_idx, i, vr2[i] + vr3[i])
+            case self.VECTOR_OP_TYPE.SUB:
+                for i in range(self.len_reg):
+                    if self.mask_reg[i]:
+                        self.VRF.write_vec_element(vr1_idx, i, vr2[i] - vr3[i])
+            case self.VECTOR_OP_TYPE.MUL:
+                for i in range(self.len_reg):
+                    if self.mask_reg[i]:
+                        self.VRF.write_vec_element(vr1_idx, i, vr2[i] * vr3[i])
+            case self.VECTOR_OP_TYPE.DIV:
+                for i in range(self.len_reg):
+                    if self.mask_reg[i]:
+                        self.VRF.write_vec_element(vr1_idx, i, int(vr2[i] / vr3[i]))
+            case _:
+                raise ValueError("invalid VV op")
+
+    # Instruction 2 and 4
+    def ___VS(self, vr1_idx, vr2_idx, op):
+        vr2 = self.VRF.Read(vr2_idx)
+        sr1 = self.instr.scalar_operand
+        match op:
+            case self.VECTOR_OP_TYPE.ADD:
+                for i in range(self.len_reg):
+                    if self.mask_reg[i]:
+                        self.VRF.write_vec_element(vr1_idx, i, vr2[i] + sr1)
+            case self.VECTOR_OP_TYPE.SUB:
+                for i in range(self.len_reg):
+                    if self.mask_reg[i]:
+                        self.VRF.write_vec_element(vr1_idx, i, vr2[i] - sr1)
+            case self.VECTOR_OP_TYPE.MUL:
+                for i in range(self.len_reg):
+                    self.VRF.write_vec_element(vr1_idx, i, vr2[i] * sr1)
+            case self.VECTOR_OP_TYPE.DIV:
+                for i in range(self.len_reg):
+                    if self.mask_reg[i]:
+                        self.VRF.write_vec_element(vr1_idx, i, int(vr2[i] / sr1))
+            case _:
+                raise ValueError("invalid VS op")
 
     def isBusy(self):
         return self.busy
 
     def acceptInstr(self, instr):
-        self.instr = instr
-        self.cycles_needed = \
-            instr.num_cycles / self.lanes * self.latency if instr.num_cycles % self.lanes == 0 \
-            else (instr.num_cycles // self.lanes + 1) * self.latency
         self.busy = True
+        self.instr = instr
+        self.cycles_needed = instr.num_cycles / self.lanes * self.latency if instr.num_cycles % self.lanes == 0 \
+            else (instr.num_cycles // self.lanes + 1) * self.latency
 
     def finishedInstr(self):
+        # update VRF
+        match self.instr.op:
+            case "ADDVV":
+                self.___VV(self.instr['operand1'], self.instr['operand2'], self.instr['operand3'], self.VECTOR_OP_TYPE.ADD)
+            case "SUBVV":
+                self.___VV(self.instr['operand1'], self.instr['operand2'], self.instr['operand3'], self.VECTOR_OP_TYPE.SUB)
+            case "MULVV":
+                self.___VV(self.instr['operand1'], self.instr['operand2'], self.instr['operand3'], self.VECTOR_OP_TYPE.MUL)
+            case "DIVVV":
+                self.___VV(self.instr['operand1'], self.instr['operand2'], self.instr['operand3'], self.VECTOR_OP_TYPE.DIV)
+            case "ADDVS":
+                self.___VS(self.instr['operand1'], self.instr['operand2'], self.VECTOR_OP_TYPE.ADD)
+            case "SUBVS":
+                self.___VS(self.instr['operand1'], self.instr['operand2'], self.VECTOR_OP_TYPE.SUB)
+            case "MULVS":
+                self.___VS(self.instr['operand1'], self.instr['operand2'], self.VECTOR_OP_TYPE.MUL)
+            case "DIVVS":
+                self.___VS(self.instr['operand1'], self.instr['operand2'], self.VECTOR_OP_TYPE.DIV)
+        # update state
         self.busy = False
-        # TODO: update state
+        self.instr = None
 
     def update(self):
         self.cycles_needed -= 1
@@ -429,7 +496,7 @@ class Core():
         self.data_queue = DispatchQueue(config['dataQueueDepth'])
         self.compute_queue = DispatchQueue(config['computeQueueDepth'])
         self.busyboard = BusyBoard()
-        self.decoder = Decoder()
+        self.decoder = Decoder(self.RFs['SRF'])
         self.compute_pipelines = {
             'Vadd': ComputePipeline('Vadd', config['pipelineDepthAdd'], config['numLanes'], self.RFs['VRF']),
             'Vmul': ComputePipeline('Vmul', config['pipelineDepthMul'], config['numLanes'], self.RFs['VRF']),
@@ -466,12 +533,6 @@ class Core():
                 stall_frontend = True
             # then check structural dependence
             match decoded_instr.type:
-                case "HALT": # for HALT we just stall the frontend (no more instructions to fetch) and wait until all instructions are executed
-                    stall_frontend = True
-                    if self.data_queue.isEmpty() and self.compute_queue.isEmpty() and not self.compute_pipelines['Vadd'].busy \
-                        and not self.compute_pipelines['Vmul'].busy and not self.compute_pipelines['Vdiv'].busy \
-                            and not self.compute_pipelines['Vshuffle'].busy:
-                        break
                 case "LSI":
                     if self.data_queue.isFull():
                         stall_frontend = True
@@ -482,6 +543,12 @@ class Core():
                         stall_frontend = True
                     else:
                         self.compute_queue.push(decoded_instr)
+                case "HALT": # for HALT we just stall the frontend (no more instructions to fetch) and wait until all instructions are executed
+                    stall_frontend = True
+                    if self.data_queue.isEmpty() and self.compute_queue.isEmpty() and not self.compute_pipelines['Vadd'].busy \
+                        and not self.compute_pipelines['Vmul'].busy and not self.compute_pipelines['Vdiv'].busy \
+                            and not self.compute_pipelines['Vshuffle'].busy:
+                        break
                 case "BRANCH": # for branch, we just continue to the next instruction
                     self.pc += 1
                     self.cycle_count += 1

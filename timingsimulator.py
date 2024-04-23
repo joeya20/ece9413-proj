@@ -2,6 +2,7 @@ import os
 import argparse
 from enum import IntEnum
 import re
+from typing import Literal
 
 '''TODO
 Frontend:
@@ -9,7 +10,6 @@ Frontend:
 Backend:
 1.1 Modify VDMEM to be banked
 1.2 Implement bank conflicts
-2. Implement compute pipelines (time busy)
 '''
 
 
@@ -31,6 +31,16 @@ class SCALAR_OP_TYPE(IntEnum):
     SRL = 6
     SLL = 7
     SRA = 8
+
+
+class BRANCH_TYPE(IntEnum):
+    ''' enum for branch and mask operations '''
+    EQ = 1
+    NE = 2
+    GT = 3
+    LT = 4
+    GE = 5
+    LE = 6
 
 
 class REGS(IntEnum):
@@ -72,17 +82,17 @@ class Config(object):
 # ************************ Frontend *******************************
 # gets created at decode stage
 class Instruction(object):
-    ''' TODO '''
     def __init__(self) -> None:
-        self.num_cycles = None
         self.op = None
+        self.type: Literal['HALT', 'BRANCH', 'SI', 'CI', 'LSI'] | None = None
         self.operand1 = None
         self.operand2 = None
         self.operand3 = None
-        self.address = None
+        # for vector instructions only
+        self.num_cycles = None
         self.regs = []
-        self.pipeline_needed = None
-        self.type = None
+        self.pipeline_needed: Literal['Vadd', 'Vmul', 'Vdiv', 'Vshuffle'] | None = None
+        self.address = None
 
 
 # Instruction Decoder
@@ -91,45 +101,97 @@ class Decoder(object):
     def __init__(self) -> None:
         self.re_pattern = re.compile(r"(?:^(?P<instruction>\w+)(?:[ ]+(?P<operand1>\w+))?(?:[ ]+(?P<operand2>\w+))?(?:[ ]+(?P<operand3>[-\w]+))?[ ]*(?P<inline_comment>#.*)?$)|(?:^(?P<comment_line>[ ]*?#.*)$)|(?P<empty_line>^(?<!.)$|(?:^[ ]+$)$)")
 
-    def decode(self, instr_str: str, len_reg, mask_reg, SRF):
+    def decode(self, instr_str: str, len_reg, mask_reg):
         instr = Instruction()
         instr_match = self.re_pattern.search(instr_str)
         if instr_match is None:
             raise Exception(f'Could not parse instruction: {instr_str}')
         instr_dict = instr_match.groupdict()
         instr.op = instr_dict['instruction']
-        # parse operands
-        instr.operand1 = instr_dict['operand1']
-        instr.operand2 = instr_dict['operand2']
-        instr.operand3 = instr_dict['operand3']
-        if instr.operand1 is not None:
-            instr.regs.append(REGS[instr.operand1])
-        if instr.operand2 is not None:
-            instr.regs.append(REGS[instr.operand2])
-        if instr.operand3 is not None:
-            instr.regs.append(REGS[instr.operand3])
         # BRANCHES
         if instr.op in ['BEQ', 'BNE', 'BLT', 'BLE', 'BGT', 'VGE']:
             instr.type = 'BRANCH'
         # HALT
         elif instr.op == 'HALT':
             instr.type = 'HALT'
-        # SI instructions
-        elif instr.op in ['ADD', 'SUB', 'AND', 'OR', 'XOR', 'SLL', 'SRL', 'SRA', 'LS', 'SS', 'CVM', 'POP', 'MTCL', 'MFCL']:
+        # SI instructions with three operands
+        elif instr.op in ['ADD', 'SUB', 'AND', 'OR', 'XOR', 'SLL', 'SRL', 'SRA', 'LS', 'SS']:
+            instr.type = 'SI'
+            # parse operands
+            if instr_dict['operand1'] is None or instr_dict['operand2'] is None or instr_dict['operand3'] is None:
+                raise Exception(f'invalid instruction: {instr_str}')
+            instr.operand1 = instr_dict['operand1']
+            instr.operand2 = instr_dict['operand2']
+            instr.operand3 = instr_dict['operand3']
+        # SI instructions with one operand
+        elif instr.op in ['POP', 'MTCL', 'MFCL']:
+            instr.type = 'SI'
+            # parse operands
+            if instr_dict['operand1'] is None or instr_dict['operand2'] is None or instr_dict['operand3'] is None:
+                raise (f'invalid instruction: {instr_str}')
+            instr.operand1 = instr_dict['operand1']
+        # SI instructions with no operand
+        elif instr.op in ['CVM']:
             instr.type = 'SI'
         # CI instructions
+        # shuffle instructions
         elif instr.op in ['UNPACKLO', 'UNPACKHI', 'PACKHI', 'PACKLO']:
             instr.type = 'CI'
             instr.pipeline_needed = 'Vshuffle'
+            # parse operands
+            if instr_dict['operand1'] is None or instr_dict['operand2'] is None or instr_dict['operand3'] is None:
+                raise (f'invalid instruction: {instr_str}')
+            instr.operand1 = instr_dict['operand1']
+            instr.operand2 = instr_dict['operand2']
+            instr.operand3 = instr_dict['operand3']
+        # add/sub instructions
         elif instr.op in ['ADDVV', 'SUBVV', 'ADDVS', 'SUBVS']:
+            # num of cycles needed is number of operations to do
+            num_cycles = 0
+            for i in range(len_reg):
+                if mask_reg[i]:
+                    num_cycles += 1
+            instr.num_cycles = num_cycles
             instr.type = 'CI'
             instr.pipeline_needed = 'Vadd'
+            # parse operands
+            if instr_dict['operand1'] is None or instr_dict['operand2'] is None or instr_dict['operand3'] is None:
+                raise (f'invalid instruction: {instr_str}')
+            instr.operand1 = instr_dict['operand1']
+            instr.operand2 = instr_dict['operand2']
+            instr.operand3 = instr_dict['operand3']
+        # mul instructions
         elif instr.op in ['MULVV', 'MULVS']:
+            # num of cycles needed is number of operations to do
+            num_cycles = 0
+            for i in range(len_reg):
+                if mask_reg[i]:
+                    num_cycles += 1
+            instr.num_cycles = num_cycles
             instr.type = 'CI'
             instr.pipeline_needed = 'Vmul'
+            # parse operands
+            if instr_dict['operand1'] is None or instr_dict['operand2'] is None or instr_dict['operand3'] is None:
+                raise (f'invalid instruction: {instr_str}')
+            instr.operand1 = instr_dict['operand1']
+            instr.operand2 = instr_dict['operand2']
+            instr.operand3 = instr_dict['operand3']
+        # div instructions
         elif instr.op in ['DIVVV', 'DIVVS']:
+            # num of cycles needed is number of operations to do
+            num_cycles = 0
+            for i in range(len_reg):
+                if mask_reg[i]:
+                    num_cycles += 1
+            instr.num_cycles = num_cycles
             instr.type = 'CI'
             instr.pipeline_needed = 'Vdiv'
+            # parse operands
+            if instr_dict['operand1'] is None or instr_dict['operand2'] is None or instr_dict['operand3'] is None:
+                raise (f'invalid instruction: {instr_str}')
+            instr.operand1 = instr_dict['operand1']
+            instr.operand2 = instr_dict['operand2']
+            instr.operand3 = instr_dict['operand3']
         # LSI instructions
         elif instr.op in ['LV', 'LVWS', 'LVI', 'SV', 'SVWS', 'SVI']:
             instr.type = 'LSI'
@@ -146,7 +208,7 @@ class DispatchQueue(object):
         self.size = 0
 
     def isFull(self):
-        return self.size >= self.depth
+        return self.size == self.depth
 
     def isEmpty(self):
         return self.size == 0
@@ -226,12 +288,13 @@ class IMEM(object):
 # ************************ Backend *******************************
 class ComputePipeline(object):
     '''base class for vector compute unit (ADD,SUB,MUL,DIV)'''
-    def __init__(self, type, latency, lanes, VRF) -> None:
+    def __init__(self, type, latency, lanes, SRF, VRF) -> None:
         self.latency = latency
         self.type = type
         self.busy = False
         self.instr = None
         self.cycles_needed = 0
+        self.SRF = SRF
         self.VRF = VRF
         self.lanes = lanes
 
@@ -240,19 +303,19 @@ class ComputePipeline(object):
         vr2 = self.VRF.Read(vr2_idx)
         vr3 = self.VRF.Read(vr3_idx)
         match op:
-            case self.VECTOR_OP_TYPE.ADD:
+            case VECTOR_OP_TYPE.ADD:
                 for i in range(self.len_reg):
                     if self.mask_reg[i]:
                         self.VRF.write_vec_element(vr1_idx, i, vr2[i] + vr3[i])
-            case self.VECTOR_OP_TYPE.SUB:
+            case VECTOR_OP_TYPE.SUB:
                 for i in range(self.len_reg):
                     if self.mask_reg[i]:
                         self.VRF.write_vec_element(vr1_idx, i, vr2[i] - vr3[i])
-            case self.VECTOR_OP_TYPE.MUL:
+            case VECTOR_OP_TYPE.MUL:
                 for i in range(self.len_reg):
                     if self.mask_reg[i]:
                         self.VRF.write_vec_element(vr1_idx, i, vr2[i] * vr3[i])
-            case self.VECTOR_OP_TYPE.DIV:
+            case VECTOR_OP_TYPE.DIV:
                 for i in range(self.len_reg):
                     if self.mask_reg[i]:
                         self.VRF.write_vec_element(vr1_idx, i, int(vr2[i] / vr3[i]))
@@ -264,23 +327,181 @@ class ComputePipeline(object):
         vr2 = self.VRF.Read(vr2_idx)
         sr1 = self.instr.scalar_operand
         match op:
-            case self.VECTOR_OP_TYPE.ADD:
+            case VECTOR_OP_TYPE.ADD:
                 for i in range(self.len_reg):
                     if self.mask_reg[i]:
                         self.VRF.write_vec_element(vr1_idx, i, vr2[i] + sr1)
-            case self.VECTOR_OP_TYPE.SUB:
+            case VECTOR_OP_TYPE.SUB:
                 for i in range(self.len_reg):
                     if self.mask_reg[i]:
                         self.VRF.write_vec_element(vr1_idx, i, vr2[i] - sr1)
-            case self.VECTOR_OP_TYPE.MUL:
+            case VECTOR_OP_TYPE.MUL:
                 for i in range(self.len_reg):
                     self.VRF.write_vec_element(vr1_idx, i, vr2[i] * sr1)
-            case self.VECTOR_OP_TYPE.DIV:
+            case VECTOR_OP_TYPE.DIV:
                 for i in range(self.len_reg):
                     if self.mask_reg[i]:
                         self.VRF.write_vec_element(vr1_idx, i, int(vr2[i] / sr1))
             case _:
                 raise ValueError("invalid VS op")
+
+    # Vector Mask Operations
+    # Instruction 5
+    def S__VV(self, vr1_idx, vr2_idx, op):
+        vr1 = self.RFs['VRF'].Read(vr1_idx)
+        vr2 = self.RFs['VRF'].Read(vr2_idx)
+        
+        match op:
+            case BRANCH_TYPE.EQ:
+                for i in range(self.len_reg):
+                    self.mask_reg[i] = vr1[i] == vr2[i]
+            case BRANCH_TYPE.NE:
+                for i in range(self.len_reg):
+                    self.mask_reg[i] = vr1[i] != vr2[i]
+            case BRANCH_TYPE.GT:
+                for i in range(self.len_reg):
+                    self.mask_reg[i] = vr1[i] > vr2[i]
+            case BRANCH_TYPE.LT:
+                for i in range(self.len_reg):
+                    self.mask_reg[i] = vr1[i] < vr2[i]
+            case BRANCH_TYPE.GE:
+                for i in range(self.len_reg):
+                    self.mask_reg[i] = vr1[i] >= vr2[i]
+            case BRANCH_TYPE.LE:
+                for i in range(self.len_reg):
+                    self.mask_reg[i] = vr1[i] <= vr2[i]
+            case _:
+                raise ValueError("invalid vv branch type")
+
+    # Instruction 6
+    def S__VS(self, vr1_idx, sr1_idx, op):
+        vr1 = self.RFs['VRF'].Read(vr1_idx)
+        sr1 = self.RFs['SRF'].Read(sr1_idx)
+        
+        match op:
+            case BRANCH_TYPE.EQ:
+                for i in range(self.len_reg):
+                    self.mask_reg[i] = vr1[i] == sr1
+            case BRANCH_TYPE.NE:
+                for i in range(self.len_reg):
+                    self.mask_reg[i] = vr1[i] != sr1
+            case BRANCH_TYPE.GT:
+                for i in range(self.len_reg):
+                    self.mask_reg[i] = vr1[i] > sr1
+            case BRANCH_TYPE.LT:
+                for i in range(self.len_reg):
+                    self.mask_reg[i] = vr1[i] < sr1
+            case BRANCH_TYPE.GE:
+                for i in range(self.len_reg):
+                    self.mask_reg[i] = vr1[i] >= sr1
+            case BRANCH_TYPE.LE:
+                for i in range(self.len_reg):
+                    self.mask_reg[i] = vr1[i] <= sr1
+            case _:
+                raise ValueError("invalid vs branch type")
+
+    # Memory Access Operations
+    # Instruction 11
+    def LV(self, vr1_idx, sr1_idx):
+        sr1 = self.RFs['SRF'].Read(sr1_idx)
+        for i in range(self.len_reg):
+            if self.mask_reg[i]:
+                val = self.VDMEM.Read(sr1 + i)
+                self.RFs['VRF'].write_vec_element(vr1_idx, i, val)
+
+    # Instruction 12
+    def SV(self, vr1_idx, sr1_idx):
+        vr1 = self.RFs['VRF'].Read(vr1_idx)
+        sr1 = self.RFs['SRF'].Read(sr1_idx)
+        for i in range(self.len_reg):
+            if self.mask_reg[i]:
+                self.VDMEM.Write(sr1+i, vr1[i])
+        
+    # Instruction 13
+    # stride applies to both mem read and vrf write?
+    def LVWS(self, vr1_idx, sr1_idx, sr2_idx):
+        sr1 = self.RFs['SRF'].Read(sr1_idx)
+        sr2 = self.RFs['SRF'].Read(sr2_idx)
+        for i in range(self.len_reg):
+            if self.mask_reg[i]:
+                val = self.VDMEM.Read(sr1 + i * sr2)
+                self.RFs['VRF'].write_vec_element(vr1_idx, i, val)
+            
+    # Instruction 14
+    def SVWS(self, vr1_idx, sr1_idx, sr2_idx):
+        vr1 = self.RFs['VRF'].Read(vr1_idx)
+        sr1 = self.RFs['SRF'].Read(sr1_idx)
+        sr2 = self.RFs['SRF'].Read(sr2_idx)
+        for i in range(self.len_reg):
+            if self.mask_reg[i]:
+                self.VDMEM.Write(sr1 + i*sr2, vr1[i])
+    
+    # Instruction 15
+    def LVI(self, vr1_idx, sr1_idx, vr2_idx):
+        sr1 = self.RFs['SRF'].Read(sr1_idx)
+        vr2 = self.RFs['VRF'].Read(vr2_idx)
+        
+        for i in range(self.len_reg):
+            if self.mask_reg[i]:
+                val = self.VDMEM.Read(sr1 + vr2[i])
+                self.RFs['VRF'].write_vec_element(vr1_idx, i, val)
+    
+    # Instruction 16
+    def SVI(self, vr1_idx, sr1_idx, vr2_idx):
+        vr1 = self.RFs['VRF'].Read(vr1_idx)
+        sr1 = self.RFs['SRF'].Read(sr1_idx)
+        vr2 = self.RFs['VRF'].Read(vr2_idx)
+        
+        # VDMEM[sr1 + vr2[i]] = vr1[i]
+        for i in range(self.len_reg):
+            if self.mask_reg[i]:
+                self.VDMEM.Write(sr1 + vr2[i], vr1[i])
+
+    # Instruction 24
+    def UNPACKLO(self, vr1_idx, vr2_idx, vr3_idx):
+        vr2 = self.RFs['VRF'].Read(vr2_idx)
+        vr3 = self.RFs['VRF'].Read(vr3_idx)
+
+        # this works for even numbers
+        for i in range(self.len_reg//2):
+            self.RFs['VRF'].write_vec_element(vr1_idx, i*2, vr2[i])
+            self.RFs['VRF'].write_vec_element(vr1_idx, i*2+1, vr3[i])
+        
+        # for odd numbers, we need to update the last element to vr2[i]
+        if self.len_reg % 2 != 0:
+            i = self.len_reg//2
+            self.RFs['VRF'].write_vec_element(vr1_idx, i*2, vr2[i])
+             
+    # Instruction 25
+    def UNPACKHI(self, vr1_idx, vr2_idx, vr3_idx):
+        vr2 = self.RFs['VRF'].Read(vr2_idx)
+        vr3 = self.RFs['VRF'].Read(vr3_idx)
+        
+        for i in range(self.len_reg//2):
+            self.RFs['VRF'].write_vec_element(vr1_idx, i*2, vr2[i + self.len_reg//2])
+            self.RFs['VRF'].write_vec_element(vr1_idx, i*2+1, vr3[i + self.len_reg//2])
+    
+        if self.len_reg % 2 != 0:
+            i = self.len_reg//2
+            self.RFs['VRF'].write_vec_element(vr1_idx, i*2, vr2[i + self.len_reg//2])
+    
+    # Instruction 26
+    def PACKLO(self, vr1_idx, vr2_idx, vr3_idx):
+        vr2 = self.RFs['VRF'].Read(vr2_idx)
+        vr3 = self.RFs['VRF'].Read(vr3_idx)
+        
+        for i in range(self.len_reg//2):
+            self.RFs['VRF'].write_vec_element(vr1_idx, i, vr2[i*2])
+            self.RFs['VRF'].write_vec_element(vr1_idx, i + self.len_reg//2, vr3[i*2])
+    
+    # Instruction 27
+    def PACKHI(self, vr1_idx, vr2_idx, vr3_idx):
+        vr2 = self.RFs['VRF'].Read(vr2_idx)
+        vr3 = self.RFs['VRF'].Read(vr3_idx)
+
+        for i in range(self.len_reg//2):
+            self.RFs['VRF'].write_vec_element(vr1_idx, i, vr2[i*2 + 1])
+            self.RFs['VRF'].write_vec_element(vr1_idx, i + self.len_reg//2, vr3[i*2 + 1])
 
     def isBusy(self):
         return self.busy
@@ -295,29 +516,74 @@ class ComputePipeline(object):
         # update VRF
         match self.instr.op:
             case "ADDVV":
-                self.___VV(self.instr['operand1'], self.instr['operand2'], self.instr['operand3'], self.VECTOR_OP_TYPE.ADD)
+                self.___VV(self.instr['operand1'], self.instr['operand2'], self.instr['operand3'], VECTOR_OP_TYPE.ADD)
             case "SUBVV":
-                self.___VV(self.instr['operand1'], self.instr['operand2'], self.instr['operand3'], self.VECTOR_OP_TYPE.SUB)
+                self.___VV(self.instr['operand1'], self.instr['operand2'], self.instr['operand3'], VECTOR_OP_TYPE.SUB)
             case "MULVV":
-                self.___VV(self.instr['operand1'], self.instr['operand2'], self.instr['operand3'], self.VECTOR_OP_TYPE.MUL)
+                self.___VV(self.instr['operand1'], self.instr['operand2'], self.instr['operand3'], VECTOR_OP_TYPE.MUL)
             case "DIVVV":
-                self.___VV(self.instr['operand1'], self.instr['operand2'], self.instr['operand3'], self.VECTOR_OP_TYPE.DIV)
+                self.___VV(self.instr['operand1'], self.instr['operand2'], self.instr['operand3'], VECTOR_OP_TYPE.DIV)
             case "ADDVS":
-                self.___VS(self.instr['operand1'], self.instr['operand2'], self.VECTOR_OP_TYPE.ADD)
+                self.___VS(self.instr['operand1'], self.instr['operand2'], VECTOR_OP_TYPE.ADD)
             case "SUBVS":
-                self.___VS(self.instr['operand1'], self.instr['operand2'], self.VECTOR_OP_TYPE.SUB)
+                self.___VS(self.instr['operand1'], self.instr['operand2'], VECTOR_OP_TYPE.SUB)
             case "MULVS":
-                self.___VS(self.instr['operand1'], self.instr['operand2'], self.VECTOR_OP_TYPE.MUL)
+                self.___VS(self.instr['operand1'], self.instr['operand2'], VECTOR_OP_TYPE.MUL)
             case "DIVVS":
-                self.___VS(self.instr['operand1'], self.instr['operand2'], self.VECTOR_OP_TYPE.DIV)
+                self.___VS(self.instr['operand1'], self.instr['operand2'], VECTOR_OP_TYPE.DIV)
+            case "SEQVV":
+                self.S__VV(self.instr['operand1'], self.instr['operand2'], BRANCH_TYPE.EQ)
+            case "SNEVV":
+                self.S__VV(self.instr['operand1'], self.instr['operand2'], BRANCH_TYPE.NE)
+            case "SGTVV":
+                self.S__VV(self.instr['operand1'], self.instr['operand2'], BRANCH_TYPE.GT)
+            case "SLTVV":
+                self.S__VV(self.instr['operand1'], self.instr['operand2'], BRANCH_TYPE.LT)
+            case "SGEVV":
+                self.S__VV(self.instr['operand1'], self.instr['operand2'], BRANCH_TYPE.GE)
+            case "SLEVV":
+                self.S__VV(self.instr['operand1'], self.instr['operand2'], BRANCH_TYPE.LE)
+            case "SEQVS":
+                self.S__VS(self.instr['operand1'], self.instr['operand2'], BRANCH_TYPE.EQ)
+            case "SNEVS":
+                self.S__VS(self.instr['operand1'], self.instr['operand2'], BRANCH_TYPE.NE)
+            case "SGTVS":
+                self.S__VS(self.instr['operand1'], self.instr['operand2'], BRANCH_TYPE.GT)
+            case "SLTVS":
+                self.S__VS(self.instr['operand1'], self.instr['operand2'], BRANCH_TYPE.LT)
+            case "SGEVS":
+                self.S__VS(self.instr['operand1'], self.instr['operand2'], BRANCH_TYPE.GE)
+            case "SLEVS":
+                self.S__VS(self.instr['operand1'], self.instr['operand2'], BRANCH_TYPE.LE)
+            case "LV":
+                self.LV(self.instr['operand1'], self.instr['operand2'])
+            case "SV":
+                self.SV(self.instr['operand1'], self.instr['operand2'])
+            case "LVWS":
+                self.LVWS(self.instr['operand1'], self.instr['operand2'], self.instr['operand3'])
+            case "SVWS":
+                self.SVWS(self.instr['operand1'], self.instr['operand2'], self.instr['operand3'])
+            case "LVI":
+                self.LVI(self.instr['operand1'], self.instr['operand2'], self.instr['operand3'])
+            case "SVI":
+                self.SVI(self.instr['operand1'], self.instr['operand2'], self.instr['operand3'])
+            case "UNPACKLO":
+                self.UNPACKLO(self.instr['operand1'], self.instr['operand2'], self.instr['operand3'])
+            case "UNPACKHI":
+                self.UNPACKHI(self.instr['operand1'], self.instr['operand2'], self.instr['operand3'])
+            case "PACKLO":
+                self.PACKLO(self.instr['operand1'], self.instr['operand2'], self.instr['operand3'])
+            case "PACKHI":
+                self.PACKHI(self.instr['operand1'], self.instr['operand2'], self.instr['operand3'])
         # update state
         self.busy = False
-        self.instr = None
 
     def update(self):
-        self.cycles_needed -= 1
-        if self.counter == 0:
+        if self.cycles_needed == 0:
             self.finishedInstr()
+            return self.instr
+        self.cycles_needed -= 1
+        return None
 
 
 class DMEM(object):
@@ -384,7 +650,7 @@ class VDMEM(DMEM):
     
     def Write(self, idx, val):
         return super().Write(idx, val)
-    
+
 
 class SDMEM(DMEM):
     pass
@@ -498,10 +764,10 @@ class Core():
         self.busyboard = BusyBoard()
         self.decoder = Decoder(self.RFs['SRF'])
         self.compute_pipelines = {
-            'Vadd': ComputePipeline('Vadd', config['pipelineDepthAdd'], config['numLanes'], self.RFs['VRF']),
-            'Vmul': ComputePipeline('Vmul', config['pipelineDepthMul'], config['numLanes'], self.RFs['VRF']),
-            'Vdiv': ComputePipeline('Vdiv', config['pipelineDepthDiv'], config['numLanes'], self.RFs['VRF']),
-            'Vshuffle': ComputePipeline('Vshu', config['pipelineDepthShuffle'], config['numLanes'], self.RFs['VRF'])
+            'Vadd': ComputePipeline('Vadd', config['pipelineDepthAdd'], config['numLanes'], self.RFs['SRF'], self.RFs['VRF']),
+            'Vmul': ComputePipeline('Vmul', config['pipelineDepthMul'], config['numLanes'], self.RFs['SRF'], self.RFs['VRF']),
+            'Vdiv': ComputePipeline('Vdiv', config['pipelineDepthDiv'], config['numLanes'], self.RFs['SRF'], self.RFs['VRF']),
+            'Vshuffle': ComputePipeline('Vshu', config['pipelineDepthShuffle'], config['numLanes'], self.RFs['SRF'], self.RFs['VRF'])
         }
         self.cycle_count = 1 # we start cycle count at 1 because we assume instr[0] has already been fetched
 
@@ -515,7 +781,9 @@ class Core():
         while True:
             # EX stage (backend)
             for pipeline in self.compute_pipelines.values():
-                pipeline.update()
+                completed_instr = pipeline.update()
+                if completed_instr is not None:
+                    self.busyboard.clear(completed_instr.regs)
 
             # add instruction to compute pipeline if possible
             curr_instr = self.compute_queue.peek()
@@ -559,7 +827,7 @@ class Core():
                         case "CVM":
                             self.CVM()
                         case "POP":
-                            self.POP(decoded_instr['operand1'])
+                            self.POP(decoded_instr.operand1)
                         case "MTCL":
                             self.MTCL(decoded_instr['operand1'])
                         case "MFCL":
@@ -637,21 +905,21 @@ class Core():
         src1 = self.RFs['SRF'].Read(sr1_idx)
         src2 = self.RFs['SRF'].Read(sr2_idx)
         match op:
-            case self.SCALAR_OP_TYPE.ADD:
+            case SCALAR_OP_TYPE.ADD:
                 self.RFs['SRF'].Write(sr3_idx, src1 + src2)
-            case self.SCALAR_OP_TYPE.SUB:
+            case SCALAR_OP_TYPE.SUB:
                 self.RFs['SRF'].Write(sr3_idx, src1 - src2)
-            case self.SCALAR_OP_TYPE.AND:
+            case SCALAR_OP_TYPE.AND:
                 self.RFs['SRF'].Write(sr3_idx, src1 & src2)
-            case self.SCALAR_OP_TYPE.OR:
+            case SCALAR_OP_TYPE.OR:
                 self.RFs['SRF'].Write(sr3_idx, src1 | src2)
-            case self.SCALAR_OP_TYPE.XOR:
+            case SCALAR_OP_TYPE.XOR:
                 self.RFs['SRF'].Write(sr3_idx, src1 ^ src2)
-            case self.SCALAR_OP_TYPE.SRL:
+            case SCALAR_OP_TYPE.SRL:
                 self.RFs['SRF'].Write(sr3_idx, (src1 & 0xffff_ffff) >> src2)
-            case self.SCALAR_OP_TYPE.SLL:
+            case SCALAR_OP_TYPE.SLL:
                 self.RFs['SRF'].Write(sr3_idx, src1 << src2)
-            case self.SCALAR_OP_TYPE.SRA:
+            case SCALAR_OP_TYPE.SRA:
                 self.RFs['SRF'].Write(sr3_idx, src1 >> src2)
             case _:
                 raise ValueError('invalid scalar op enum')

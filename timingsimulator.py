@@ -82,12 +82,15 @@ class Config(object):
 # ************************ Frontend *******************************
 # gets created at decode stage
 class Instruction(object):
-    def __init__(self) -> None:
+    def __init__(self, len_reg, mask_reg) -> None:
         self.op = None
-        self.type: Literal['HALT', 'BRANCH', 'SI', 'CI', 'LSI'] | None = None
         self.operand1 = None
         self.operand2 = None
         self.operand3 = None
+        self.len_reg = len_reg
+        self.mask_reg_cpy = mask_reg[:]
+        self.mask_reg_ref = mask_reg
+        self.type: Literal['HALT', 'BRANCH', 'SI', 'CI', 'LSI'] | None = None
         # for vector instructions only
         self.num_cycles = None
         self.regs = []
@@ -102,7 +105,7 @@ class Decoder(object):
         self.re_pattern = re.compile(r"(?:^(?P<instruction>\w+)(?:[ ]+(?P<operand1>\w+))?(?:[ ]+(?P<operand2>\w+))?(?:[ ]+(?P<operand3>[-\w]+))?[ ]*(?P<inline_comment>#.*)?$)|(?:^(?P<comment_line>[ ]*?#.*)$)|(?P<empty_line>^(?<!.)$|(?:^[ ]+$)$)")
 
     def decode(self, instr_str: str, len_reg, mask_reg):
-        instr = Instruction()
+        instr = Instruction(len_reg, mask_reg)
         instr_match = self.re_pattern.search(instr_str)
         if instr_match is None:
             raise Exception(f'Could not parse instruction: {instr_str}')
@@ -281,67 +284,65 @@ class IMEM(object):
     def Read(self, idx): # Use this to read from IMEM.
         if idx >= 0 and idx < self.size:
             return self.instructions[idx]
-        else:
-            print("IMEM - ERROR: Invalid memory access at index: ", idx, " with memory size: ", self.size)
+        print("IMEM - ERROR: Invalid memory access at index: ", idx, " with memory size: ", self.size)
 
 
 # ************************ Backend *******************************
 class ComputePipeline(object):
     '''base class for vector compute unit (ADD,SUB,MUL,DIV)'''
-    def __init__(self, type, latency, lanes, SRF, VRF) -> None:
+    def __init__(self, type, latency, lanes, RFs) -> None:
         self.latency = latency
         self.type = type
         self.busy = False
         self.instr = None
         self.cycles_needed = 0
-        self.SRF = SRF
-        self.VRF = VRF
+        self.RFs = RFs
         self.lanes = lanes
 
     # Instruction 1 and 3
     def ___VV(self, vr1_idx, vr2_idx, vr3_idx, op):
-        vr2 = self.VRF.Read(vr2_idx)
-        vr3 = self.VRF.Read(vr3_idx)
+        vr2 = self.RFs['VRF'].Read(vr2_idx)
+        vr3 = self.RFs['VRF'].Read(vr3_idx)
         match op:
             case VECTOR_OP_TYPE.ADD:
-                for i in range(self.len_reg):
-                    if self.mask_reg[i]:
-                        self.VRF.write_vec_element(vr1_idx, i, vr2[i] + vr3[i])
+                for i in range(self.instr.len_reg):
+                    if self.instr.mask_reg_cpy[i]:
+                        self.RFs['VRF'].write_vec_element(vr1_idx, i, vr2[i] + vr3[i])
             case VECTOR_OP_TYPE.SUB:
-                for i in range(self.len_reg):
-                    if self.mask_reg[i]:
-                        self.VRF.write_vec_element(vr1_idx, i, vr2[i] - vr3[i])
+                for i in range(self.instr.len_reg):
+                    if self.instr.mask_reg_cpy[i]:
+                        self.RFs['VRF'].write_vec_element(vr1_idx, i, vr2[i] - vr3[i])
             case VECTOR_OP_TYPE.MUL:
-                for i in range(self.len_reg):
-                    if self.mask_reg[i]:
-                        self.VRF.write_vec_element(vr1_idx, i, vr2[i] * vr3[i])
+                for i in range(self.instr.len_reg):
+                    if self.instr.mask_reg_cpy[i]:
+                        self.RFs['VRF'].write_vec_element(vr1_idx, i, vr2[i] * vr3[i])
             case VECTOR_OP_TYPE.DIV:
-                for i in range(self.len_reg):
-                    if self.mask_reg[i]:
-                        self.VRF.write_vec_element(vr1_idx, i, int(vr2[i] / vr3[i]))
+                for i in range(self.instr.len_reg):
+                    if self.instr.mask_reg_cpy[i]:
+                        self.RFs['VRF'].write_vec_element(vr1_idx, i, int(vr2[i] / vr3[i]))
             case _:
                 raise ValueError("invalid VV op")
 
     # Instruction 2 and 4
-    def ___VS(self, vr1_idx, vr2_idx, op):
-        vr2 = self.VRF.Read(vr2_idx)
-        sr1 = self.instr.scalar_operand
+    def ___VS(self, vr1_idx, vr2_idx, sr1_idx, op):
+        vr2 = self.RFs['VRF'].Read(vr2_idx)
+        sr1 = self.RFs['SRF'].Read(sr1_idx)
         match op:
             case VECTOR_OP_TYPE.ADD:
-                for i in range(self.len_reg):
-                    if self.mask_reg[i]:
-                        self.VRF.write_vec_element(vr1_idx, i, vr2[i] + sr1)
+                for i in range(self.instr.len_reg):
+                    if self.instr.mask_reg_cpy[i]:
+                        self.RFs['VRF'].write_vec_element(vr1_idx, i, vr2[i] + sr1)
             case VECTOR_OP_TYPE.SUB:
-                for i in range(self.len_reg):
-                    if self.mask_reg[i]:
-                        self.VRF.write_vec_element(vr1_idx, i, vr2[i] - sr1)
+                for i in range(self.instr.len_reg):
+                    if self.instr.mask_reg_cpy[i]:
+                        self.RFs['VRF'].write_vec_element(vr1_idx, i, vr2[i] - sr1)
             case VECTOR_OP_TYPE.MUL:
-                for i in range(self.len_reg):
-                    self.VRF.write_vec_element(vr1_idx, i, vr2[i] * sr1)
+                for i in range(self.instr.len_reg):
+                    self.RFs['VRF'].write_vec_element(vr1_idx, i, vr2[i] * sr1)
             case VECTOR_OP_TYPE.DIV:
-                for i in range(self.len_reg):
-                    if self.mask_reg[i]:
-                        self.VRF.write_vec_element(vr1_idx, i, int(vr2[i] / sr1))
+                for i in range(self.instr.len_reg):
+                    if self.instr.mask_reg_cpy[i]:
+                        self.RFs['VRF'].write_vec_element(vr1_idx, i, int(vr2[i] / sr1))
             case _:
                 raise ValueError("invalid VS op")
 
@@ -350,26 +351,25 @@ class ComputePipeline(object):
     def S__VV(self, vr1_idx, vr2_idx, op):
         vr1 = self.RFs['VRF'].Read(vr1_idx)
         vr2 = self.RFs['VRF'].Read(vr2_idx)
-        
         match op:
             case BRANCH_TYPE.EQ:
-                for i in range(self.len_reg):
-                    self.mask_reg[i] = vr1[i] == vr2[i]
+                for i in range(self.instr.len_reg):
+                    self.instr.mask_reg_ref[i] = vr1[i] == vr2[i]
             case BRANCH_TYPE.NE:
-                for i in range(self.len_reg):
-                    self.mask_reg[i] = vr1[i] != vr2[i]
+                for i in range(self.instr.len_reg):
+                    self.instr.mask_reg_ref[i] = vr1[i] != vr2[i]
             case BRANCH_TYPE.GT:
-                for i in range(self.len_reg):
-                    self.mask_reg[i] = vr1[i] > vr2[i]
+                for i in range(self.instr.len_reg):
+                    self.instr.mask_reg_ref[i] = vr1[i] > vr2[i]
             case BRANCH_TYPE.LT:
-                for i in range(self.len_reg):
-                    self.mask_reg[i] = vr1[i] < vr2[i]
+                for i in range(self.instr.len_reg):
+                    self.instr.mask_reg_ref[i] = vr1[i] < vr2[i]
             case BRANCH_TYPE.GE:
-                for i in range(self.len_reg):
-                    self.mask_reg[i] = vr1[i] >= vr2[i]
+                for i in range(self.instr.len_reg):
+                    self.instr.mask_reg_ref[i] = vr1[i] >= vr2[i]
             case BRANCH_TYPE.LE:
-                for i in range(self.len_reg):
-                    self.mask_reg[i] = vr1[i] <= vr2[i]
+                for i in range(self.instr.len_reg):
+                    self.instr.mask_reg_ref[i] = vr1[i] <= vr2[i]
             case _:
                 raise ValueError("invalid vv branch type")
 
@@ -380,23 +380,23 @@ class ComputePipeline(object):
         
         match op:
             case BRANCH_TYPE.EQ:
-                for i in range(self.len_reg):
-                    self.mask_reg[i] = vr1[i] == sr1
+                for i in range(self.instr.len_reg):
+                    self.instr.mask_reg_ref[i] = vr1[i] == sr1
             case BRANCH_TYPE.NE:
-                for i in range(self.len_reg):
-                    self.mask_reg[i] = vr1[i] != sr1
+                for i in range(self.instr.len_reg):
+                    self.instr.mask_reg_ref[i] = vr1[i] != sr1
             case BRANCH_TYPE.GT:
-                for i in range(self.len_reg):
-                    self.mask_reg[i] = vr1[i] > sr1
+                for i in range(self.instr.len_reg):
+                    self.instr.mask_reg_ref[i] = vr1[i] > sr1
             case BRANCH_TYPE.LT:
-                for i in range(self.len_reg):
-                    self.mask_reg[i] = vr1[i] < sr1
+                for i in range(self.instr.len_reg):
+                    self.instr.mask_reg_ref[i] = vr1[i] < sr1
             case BRANCH_TYPE.GE:
-                for i in range(self.len_reg):
-                    self.mask_reg[i] = vr1[i] >= sr1
+                for i in range(self.instr.len_reg):
+                    self.instr.mask_reg_ref[i] = vr1[i] >= sr1
             case BRANCH_TYPE.LE:
-                for i in range(self.len_reg):
-                    self.mask_reg[i] = vr1[i] <= sr1
+                for i in range(self.instr.len_reg):
+                    self.instr.mask_reg_ref[i] = vr1[i] <= sr1
             case _:
                 raise ValueError("invalid vs branch type")
 
@@ -404,8 +404,8 @@ class ComputePipeline(object):
     # Instruction 11
     def LV(self, vr1_idx, sr1_idx):
         sr1 = self.RFs['SRF'].Read(sr1_idx)
-        for i in range(self.len_reg):
-            if self.mask_reg[i]:
+        for i in range(self.instr.len_reg):
+            if self.instr.mask_reg_cpy[i]:
                 val = self.VDMEM.Read(sr1 + i)
                 self.RFs['VRF'].write_vec_element(vr1_idx, i, val)
 
@@ -413,8 +413,8 @@ class ComputePipeline(object):
     def SV(self, vr1_idx, sr1_idx):
         vr1 = self.RFs['VRF'].Read(vr1_idx)
         sr1 = self.RFs['SRF'].Read(sr1_idx)
-        for i in range(self.len_reg):
-            if self.mask_reg[i]:
+        for i in range(self.instr.len_reg):
+            if self.instr.mask_reg_cpy[i]:
                 self.VDMEM.Write(sr1+i, vr1[i])
         
     # Instruction 13
@@ -422,8 +422,8 @@ class ComputePipeline(object):
     def LVWS(self, vr1_idx, sr1_idx, sr2_idx):
         sr1 = self.RFs['SRF'].Read(sr1_idx)
         sr2 = self.RFs['SRF'].Read(sr2_idx)
-        for i in range(self.len_reg):
-            if self.mask_reg[i]:
+        for i in range(self.instr.len_reg):
+            if self.instr.mask_reg_cpy[i]:
                 val = self.VDMEM.Read(sr1 + i * sr2)
                 self.RFs['VRF'].write_vec_element(vr1_idx, i, val)
             
@@ -432,8 +432,8 @@ class ComputePipeline(object):
         vr1 = self.RFs['VRF'].Read(vr1_idx)
         sr1 = self.RFs['SRF'].Read(sr1_idx)
         sr2 = self.RFs['SRF'].Read(sr2_idx)
-        for i in range(self.len_reg):
-            if self.mask_reg[i]:
+        for i in range(self.instr.len_reg):
+            if self.instr.mask_reg_cpy[i]:
                 self.VDMEM.Write(sr1 + i*sr2, vr1[i])
     
     # Instruction 15
@@ -441,8 +441,8 @@ class ComputePipeline(object):
         sr1 = self.RFs['SRF'].Read(sr1_idx)
         vr2 = self.RFs['VRF'].Read(vr2_idx)
         
-        for i in range(self.len_reg):
-            if self.mask_reg[i]:
+        for i in range(self.instr.len_reg):
+            if self.instr.mask_reg_cpy[i]:
                 val = self.VDMEM.Read(sr1 + vr2[i])
                 self.RFs['VRF'].write_vec_element(vr1_idx, i, val)
     
@@ -453,8 +453,8 @@ class ComputePipeline(object):
         vr2 = self.RFs['VRF'].Read(vr2_idx)
         
         # VDMEM[sr1 + vr2[i]] = vr1[i]
-        for i in range(self.len_reg):
-            if self.mask_reg[i]:
+        for i in range(self.instr.len_reg):
+            if self.instr.mask_reg_cpy[i]:
                 self.VDMEM.Write(sr1 + vr2[i], vr1[i])
 
     # Instruction 24
@@ -463,45 +463,45 @@ class ComputePipeline(object):
         vr3 = self.RFs['VRF'].Read(vr3_idx)
 
         # this works for even numbers
-        for i in range(self.len_reg//2):
+        for i in range(self.instr.len_reg//2):
             self.RFs['VRF'].write_vec_element(vr1_idx, i*2, vr2[i])
             self.RFs['VRF'].write_vec_element(vr1_idx, i*2+1, vr3[i])
         
         # for odd numbers, we need to update the last element to vr2[i]
-        if self.len_reg % 2 != 0:
-            i = self.len_reg//2
+        if self.instr.len_reg % 2 != 0:
+            i = self.instr.len_reg//2
             self.RFs['VRF'].write_vec_element(vr1_idx, i*2, vr2[i])
-             
+
     # Instruction 25
     def UNPACKHI(self, vr1_idx, vr2_idx, vr3_idx):
         vr2 = self.RFs['VRF'].Read(vr2_idx)
         vr3 = self.RFs['VRF'].Read(vr3_idx)
         
-        for i in range(self.len_reg//2):
-            self.RFs['VRF'].write_vec_element(vr1_idx, i*2, vr2[i + self.len_reg//2])
-            self.RFs['VRF'].write_vec_element(vr1_idx, i*2+1, vr3[i + self.len_reg//2])
+        for i in range(self.instr.len_reg//2):
+            self.RFs['VRF'].write_vec_element(vr1_idx, i*2, vr2[i + self.instr.len_reg//2])
+            self.RFs['VRF'].write_vec_element(vr1_idx, i*2+1, vr3[i + self.instr.len_reg//2])
     
-        if self.len_reg % 2 != 0:
-            i = self.len_reg//2
-            self.RFs['VRF'].write_vec_element(vr1_idx, i*2, vr2[i + self.len_reg//2])
+        if self.instr.len_reg % 2 != 0:
+            i = self.instr.len_reg//2
+            self.RFs['VRF'].write_vec_element(vr1_idx, i*2, vr2[i + self.instr.len_reg//2])
     
     # Instruction 26
     def PACKLO(self, vr1_idx, vr2_idx, vr3_idx):
         vr2 = self.RFs['VRF'].Read(vr2_idx)
         vr3 = self.RFs['VRF'].Read(vr3_idx)
         
-        for i in range(self.len_reg//2):
+        for i in range(self.instr.len_reg//2):
             self.RFs['VRF'].write_vec_element(vr1_idx, i, vr2[i*2])
-            self.RFs['VRF'].write_vec_element(vr1_idx, i + self.len_reg//2, vr3[i*2])
+            self.RFs['VRF'].write_vec_element(vr1_idx, i + self.instr.len_reg//2, vr3[i*2])
     
     # Instruction 27
     def PACKHI(self, vr1_idx, vr2_idx, vr3_idx):
         vr2 = self.RFs['VRF'].Read(vr2_idx)
         vr3 = self.RFs['VRF'].Read(vr3_idx)
 
-        for i in range(self.len_reg//2):
+        for i in range(self.instr.len_reg//2):
             self.RFs['VRF'].write_vec_element(vr1_idx, i, vr2[i*2 + 1])
-            self.RFs['VRF'].write_vec_element(vr1_idx, i + self.len_reg//2, vr3[i*2 + 1])
+            self.RFs['VRF'].write_vec_element(vr1_idx, i + self.instr.len_reg//2, vr3[i*2 + 1])
 
     def isBusy(self):
         return self.busy
@@ -524,13 +524,13 @@ class ComputePipeline(object):
             case "DIVVV":
                 self.___VV(self.instr['operand1'], self.instr['operand2'], self.instr['operand3'], VECTOR_OP_TYPE.DIV)
             case "ADDVS":
-                self.___VS(self.instr['operand1'], self.instr['operand2'], VECTOR_OP_TYPE.ADD)
+                self.___VS(self.instr['operand1'], self.instr['operand2'], self.instr['operand3'], VECTOR_OP_TYPE.ADD)
             case "SUBVS":
-                self.___VS(self.instr['operand1'], self.instr['operand2'], VECTOR_OP_TYPE.SUB)
+                self.___VS(self.instr['operand1'], self.instr['operand2'], self.instr['operand3'], VECTOR_OP_TYPE.SUB)
             case "MULVS":
-                self.___VS(self.instr['operand1'], self.instr['operand2'], VECTOR_OP_TYPE.MUL)
+                self.___VS(self.instr['operand1'], self.instr['operand2'], self.instr['operand3'], VECTOR_OP_TYPE.MUL)
             case "DIVVS":
-                self.___VS(self.instr['operand1'], self.instr['operand2'], VECTOR_OP_TYPE.DIV)
+                self.___VS(self.instr['operand1'], self.instr['operand2'], self.instr['operand3'], VECTOR_OP_TYPE.DIV)
             case "SEQVV":
                 self.S__VV(self.instr['operand1'], self.instr['operand2'], BRANCH_TYPE.EQ)
             case "SNEVV":
@@ -714,11 +714,11 @@ class RegisterFile(object):
         idx = self.getIdx(idx)
         self.checkVal(val)
         if self.name == 'SRF':
-            if type(val) is not int:
+            if isinstance(val, int):
                 raise ValueError('expected type int for SRF write')
             self.registers[idx][0] = val
         else:
-            if type(val) is not list or len(val) != 64:
+            if not isinstance(val, list) or len(val) != 64:
                 raise ValueError('expected type list with length 64 for VRF write')
             self.registers[idx] = val
             
@@ -762,12 +762,12 @@ class Core():
         self.data_queue = DispatchQueue(config['dataQueueDepth'])
         self.compute_queue = DispatchQueue(config['computeQueueDepth'])
         self.busyboard = BusyBoard()
-        self.decoder = Decoder(self.RFs['SRF'])
+        self.decoder = Decoder()
         self.compute_pipelines = {
-            'Vadd': ComputePipeline('Vadd', config['pipelineDepthAdd'], config['numLanes'], self.RFs['SRF'], self.RFs['VRF']),
-            'Vmul': ComputePipeline('Vmul', config['pipelineDepthMul'], config['numLanes'], self.RFs['SRF'], self.RFs['VRF']),
-            'Vdiv': ComputePipeline('Vdiv', config['pipelineDepthDiv'], config['numLanes'], self.RFs['SRF'], self.RFs['VRF']),
-            'Vshuffle': ComputePipeline('Vshu', config['pipelineDepthShuffle'], config['numLanes'], self.RFs['SRF'], self.RFs['VRF'])
+            'Vadd': ComputePipeline('Vadd', config['pipelineDepthAdd'], config['numLanes'], self.RFs),
+            'Vmul': ComputePipeline('Vmul', config['pipelineDepthMul'], config['numLanes'], self.RFs),
+            'Vdiv': ComputePipeline('Vdiv', config['pipelineDepthDiv'], config['numLanes'], self.RFs),
+            'Vshuffle': ComputePipeline('Vshu', config['pipelineDepthShuffle'], config['numLanes'], self.RFs)
         }
         self.cycle_count = 1 # we start cycle count at 1 because we assume instr[0] has already been fetched
 

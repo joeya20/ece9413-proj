@@ -43,27 +43,19 @@ class BRANCH_TYPE(IntEnum):
     LE = 6
 
 
-class REGS(IntEnum):
+class VREGS(IntEnum):
     ''' enum for registers '''
-    SR0 = 0
-    SR1 = 1
-    SR2 = 2
-    SR3 = 3
-    SR4 = 4
-    SR5 = 5
-    SR6 = 6
-    SR7 = 7
-    VR0 = 8
-    VR1 = 9
-    VR2 = 10
-    VR3 = 11
-    VR4 = 12
-    VR5 = 13
-    VR6 = 14
-    VR7 = 15
+    VR0 = 0
+    VR1 = 1
+    VR2 = 2
+    VR3 = 3
+    VR4 = 4
+    VR5 = 5
+    VR6 = 6
+    VR7 = 7
 
 
-class Config(object):
+class Config():
     def __init__(self, iodir):
         self.filepath = os.path.abspath(os.path.join(iodir, "Config.txt"))
         self.parameters = {} # dictionary of parameter name: value as strings.
@@ -81,34 +73,36 @@ class Config(object):
 
 # ************************ Frontend *******************************
 # gets created at decode stage
-class Instruction(object):
+class Instruction():
     def __init__(self, len_reg, mask_reg) -> None:
+        self.len_reg = len_reg
+        self.mask_reg_cpy = mask_reg[:]
+        self.mask_reg_ref = mask_reg
         self.op = None
         self.operand1 = None
         self.operand2 = None
         self.operand3 = None
-        self.len_reg = len_reg
-        self.mask_reg_cpy = mask_reg[:]
-        self.mask_reg_ref = mask_reg
         self.type: Literal['HALT', 'BRANCH', 'SI', 'CI', 'LSI'] | None = None
         # for vector instructions only
-        self.num_cycles = None
+        self.num_operations = None
         self.regs = []
         self.pipeline_needed: Literal['Vadd', 'Vmul', 'Vdiv', 'Vshuffle'] | None = None
+        self.scalar_data = None
         self.address = None
 
 
 # Instruction Decoder
-class Decoder(object):
-    '''TODO: add support for new LSI instruction format and compute num_cycles'''
-    def __init__(self) -> None:
+class Decoder():
+    '''TODO: add support for new LSI instruction format and compute num_operations'''
+    def __init__(self, SRF) -> None:
         self.re_pattern = re.compile(r"(?:^(?P<instruction>\w+)(?:[ ]+(?P<operand1>\w+))?(?:[ ]+(?P<operand2>\w+))?(?:[ ]+(?P<operand3>[-\w]+))?[ ]*(?P<inline_comment>#.*)?$)|(?:^(?P<comment_line>[ ]*?#.*)$)|(?P<empty_line>^(?<!.)$|(?:^[ ]+$)$)")
+        self.SRF = SRF
 
-    def decode(self, instr_str: str, len_reg, mask_reg):
+    def decode(self, instr_str, len_reg, mask_reg):
         instr = Instruction(len_reg, mask_reg)
         instr_match = self.re_pattern.search(instr_str)
         if instr_match is None:
-            raise Exception(f'Could not parse instruction: {instr_str}')
+            raise ValueError(f'Could not parse instruction: {instr_str}')
         instr_dict = instr_match.groupdict()
         instr.op = instr_dict['instruction']
         # BRANCHES
@@ -122,7 +116,7 @@ class Decoder(object):
             instr.type = 'SI'
             # parse operands
             if instr_dict['operand1'] is None or instr_dict['operand2'] is None or instr_dict['operand3'] is None:
-                raise Exception(f'invalid instruction: {instr_str}')
+                raise ValueError(f'invalid instruction: {instr_str}')
             instr.operand1 = instr_dict['operand1']
             instr.operand2 = instr_dict['operand2']
             instr.operand3 = instr_dict['operand3']
@@ -130,80 +124,69 @@ class Decoder(object):
         elif instr.op in ['POP', 'MTCL', 'MFCL']:
             instr.type = 'SI'
             # parse operands
-            if instr_dict['operand1'] is None or instr_dict['operand2'] is None or instr_dict['operand3'] is None:
-                raise (f'invalid instruction: {instr_str}')
+            if instr_dict['operand1'] is None:
+                raise ValueError(f'invalid instruction: {instr_str}')
             instr.operand1 = instr_dict['operand1']
         # SI instructions with no operand
         elif instr.op in ['CVM']:
             instr.type = 'SI'
         # CI instructions
-        # shuffle instructions
-        elif instr.op in ['UNPACKLO', 'UNPACKHI', 'PACKHI', 'PACKLO']:
-            instr.type = 'CI'
-            instr.pipeline_needed = 'Vshuffle'
-            # parse operands
-            if instr_dict['operand1'] is None or instr_dict['operand2'] is None or instr_dict['operand3'] is None:
-                raise (f'invalid instruction: {instr_str}')
-            instr.operand1 = instr_dict['operand1']
-            instr.operand2 = instr_dict['operand2']
-            instr.operand3 = instr_dict['operand3']
-        # add/sub instructions
-        elif instr.op in ['ADDVV', 'SUBVV', 'ADDVS', 'SUBVS']:
+        elif instr.op in ['ADDVV', 'SUBVV', 'ADDVS', 'SUBVS', 'MULVV', 'MULVS', 'DIVVV', 'DIVVS',
+                          'SEQVV', 'SNEVV', 'SGTVV', 'SLTVV', 'SGEVV', 'SLEVV',
+                          'SEQVS', 'SNEVS', 'SGTVS', 'SLTVS', 'SGEVS', 'SLEVS',
+                          'UNPACKLO', 'UNPACKHI', 'PACKHI', 'PACKLO']:
             # num of cycles needed is number of operations to do
-            num_cycles = 0
+            num_operations = 0
             for i in range(len_reg):
                 if mask_reg[i]:
-                    num_cycles += 1
-            instr.num_cycles = num_cycles
+                    num_operations += 1
+            instr.num_operations = num_operations
             instr.type = 'CI'
-            instr.pipeline_needed = 'Vadd'
-            # parse operands
-            if instr_dict['operand1'] is None or instr_dict['operand2'] is None or instr_dict['operand3'] is None:
-                raise (f'invalid instruction: {instr_str}')
             instr.operand1 = instr_dict['operand1']
             instr.operand2 = instr_dict['operand2']
             instr.operand3 = instr_dict['operand3']
-        # mul instructions
-        elif instr.op in ['MULVV', 'MULVS']:
-            # num of cycles needed is number of operations to do
-            num_cycles = 0
-            for i in range(len_reg):
-                if mask_reg[i]:
-                    num_cycles += 1
-            instr.num_cycles = num_cycles
-            instr.type = 'CI'
-            instr.pipeline_needed = 'Vmul'
-            # parse operands
-            if instr_dict['operand1'] is None or instr_dict['operand2'] is None or instr_dict['operand3'] is None:
-                raise (f'invalid instruction: {instr_str}')
-            instr.operand1 = instr_dict['operand1']
-            instr.operand2 = instr_dict['operand2']
-            instr.operand3 = instr_dict['operand3']
-        # div instructions
-        elif instr.op in ['DIVVV', 'DIVVS']:
-            # num of cycles needed is number of operations to do
-            num_cycles = 0
-            for i in range(len_reg):
-                if mask_reg[i]:
-                    num_cycles += 1
-            instr.num_cycles = num_cycles
-            instr.type = 'CI'
-            instr.pipeline_needed = 'Vdiv'
-            # parse operands
-            if instr_dict['operand1'] is None or instr_dict['operand2'] is None or instr_dict['operand3'] is None:
-                raise (f'invalid instruction: {instr_str}')
-            instr.operand1 = instr_dict['operand1']
-            instr.operand2 = instr_dict['operand2']
-            instr.operand3 = instr_dict['operand3']
+            match instr.op:
+                case 'ADDVV' | 'SUBVV':
+                    instr.pipeline_needed = 'Vadd'
+                    instr.regs = [VREGS[instr] for instr in [instr_dict['operand1'], instr_dict['operand2'], instr_dict['operand3']]]
+                case 'MULVV':
+                    instr.pipeline_needed = 'Vmul'
+                    instr.regs = [VREGS[instr] for instr in [instr_dict['operand1'], instr_dict['operand2'], instr_dict['operand3']]]
+                case 'DIVVV':
+                    instr.pipeline_needed = 'Vdiv'
+                    instr.regs = [VREGS[instr] for instr in [instr_dict['operand1'], instr_dict['operand2'], instr_dict['operand3']]]
+                case 'ADDVS' | 'SUBVS':
+                    instr.pipeline_needed = 'Vadd'
+                    instr.regs = [VREGS[instr] for instr in [instr_dict['operand1'], instr_dict['operand2']]]
+                    instr.scalar_data = self.SRF.Read(instr_dict['operand3'])
+                case 'MULVS':
+                    instr.pipeline_needed = 'Vmul'
+                    instr.regs = [VREGS[instr] for instr in [instr_dict['operand1'], instr_dict['operand2']]]
+                    instr.scalar_data = self.SRF.Read(instr_dict['operand3'])
+                case 'DIVVS':
+                    instr.pipeline_needed = 'Vdiv'
+                    instr.regs = [VREGS[instr] for instr in [instr_dict['operand1'], instr_dict['operand2']]]
+                    instr.scalar_data = self.SRF.Read(instr_dict['operand3'])
+                case  'SEQVV' | 'SNEVV' | 'SGTVV' | 'SLTVV' | 'SGEVV' | 'SLEVV':
+                    instr.pipeline_needed = 'Vadd'
+                    instr.regs = [VREGS[instr] for instr in [instr_dict['operand1'], instr_dict['operand2']]]
+                case  'SEQVS' | 'SNEVS' | 'SGTVS' | 'SLTVS' | 'SGEVS' | 'SLEVS':
+                    instr.pipeline_needed = 'Vadd'
+                    instr.regs = [VREGS[instr_dict['operand1']]]
+                    instr.scalar_data = self.SRF.Read(instr_dict['operand2'])
+                case _:
+                    instr.pipeline_needed = 'Vshuffle'
+                    instr.regs = [VREGS[instr] for instr in [instr_dict['operand1'], instr_dict['operand2'], instr_dict['operand3']]]
         # LSI instructions
         elif instr.op in ['LV', 'LVWS', 'LVI', 'SV', 'SVWS', 'SVI']:
             instr.type = 'LSI'
+            # TODO
 
         return instr
 
 
 # base class for dispatch queues
-class DispatchQueue(object):
+class DispatchQueue():
     ''' DONE '''
     def __init__(self, depth) -> None:
         self.depth = depth
@@ -236,13 +219,13 @@ class DispatchQueue(object):
         self.queue.append(instr)
 
 
-class BusyBoard(object):
+class BusyBoard():
     ''' DONE '''
-    def __init__(self, srf_size=8, vrf_size=8) -> None:
+    def __init__(self, vrf_size=8) -> None:
         # vrf and srf size are ]hardcoded to a max of 8 each due to enum
-        self.board = [False for _ in range(srf_size + vrf_size)]
+        self.board = [False for _ in range(vrf_size)]
 
-    def setBusy(self, regs: list[REGS]):
+    def setBusy(self, regs: list[VREGS]):
         ''' sets the busy bit for the registers in regs
         throws exception if already busy
         '''
@@ -251,7 +234,7 @@ class BusyBoard(object):
                 raise ValueError(f'register {reg.name} already busy')
             self.board[reg.value] = True
 
-    def clear(self, regs: list[REGS]):
+    def clear(self, regs: list[VREGS]):
         ''' clears the busy bit for the registers in regs
         throws exception if already free
         '''
@@ -260,12 +243,15 @@ class BusyBoard(object):
                 raise ValueError(f'register {reg.name} already free')
             self.board[reg.value] = False
 
-    def isBusy(self, regs: list[REGS]):
+    def isBusy(self, regs: list[VREGS]):
         ''' returns True if the register is busy '''
-        return [self.board[reg.value] for reg in regs]
+        for reg in regs:
+            if self.board[reg.value]:
+                return True
+        return False
 
 
-class IMEM(object):
+class IMEM():
     def __init__(self, iodir):
         self.size = pow(2, 16) # Can hold a maximum of 2^16 instructions.
         self.filepath = os.path.abspath(os.path.join(iodir, "Code.asm"))
@@ -288,16 +274,101 @@ class IMEM(object):
 
 
 # ************************ Backend *******************************
-class ComputePipeline(object):
+class ComputePipeline():
     '''base class for vector compute unit (ADD,SUB,MUL,DIV)'''
-    def __init__(self, type, latency, lanes, RFs) -> None:
-        self.latency = latency
+    def __init__(self, type, depth, lanes, RFs) -> None:
+        self.depth = int(depth)
         self.type = type
         self.busy = False
         self.instr = None
         self.cycles_needed = 0
         self.RFs = RFs
-        self.lanes = lanes
+        self.lanes = int(lanes)
+
+    def update(self):
+        self.cycles_needed -= 1
+        if self.cycles_needed == 0:
+            self.finishedInstr()
+            return self.instr
+        return None
+
+    def isBusy(self):
+        return self.busy
+
+    def acceptInstr(self, instr):
+        self.busy = True
+        self.instr = instr
+        print(f'operations needed: {instr.num_operations}')
+        interations_needed = int((instr.num_operations + instr.num_operations % self.lanes) / self.lanes)
+        print(f'interations needed: {interations_needed}')
+        self.cycles_needed = self.depth + interations_needed - 1
+        print(f'cycles needed: {self.cycles_needed}')
+
+    def finishedInstr(self):
+        # update VRF
+        match self.instr.op:
+            case "ADDVV":
+                self.___VV(self.instr.operand1, self.instr.operand2, self.instr.operand3, VECTOR_OP_TYPE.ADD)
+            case "SUBVV":
+                self.___VV(self.instr.operand1, self.instr.operand2, self.instr.operand3, VECTOR_OP_TYPE.SUB)
+            case "MULVV":
+                self.___VV(self.instr.operand1, self.instr.operand2, self.instr.operand3, VECTOR_OP_TYPE.MUL)
+            case "DIVVV":
+                self.___VV(self.instr.operand1, self.instr.operand2, self.instr.operand3, VECTOR_OP_TYPE.DIV)
+            case "ADDVS":
+                self.___VS(self.instr.operand1, self.instr.operand2, self.instr.scalar_data, VECTOR_OP_TYPE.ADD)
+            case "SUBVS":
+                self.___VS(self.instr.operand1, self.instr.operand2, self.instr.scalar_data, VECTOR_OP_TYPE.SUB)
+            case "MULVS":
+                self.___VS(self.instr.operand1, self.instr.operand2, self.instr.scalar_data, VECTOR_OP_TYPE.MUL)
+            case "DIVVS":
+                self.___VS(self.instr.operand1, self.instr.operand2, self.instr.scalar_data, VECTOR_OP_TYPE.DIV)
+            case "SEQVV":
+                self.S__VV(self.instr.operand1, self.instr.operand2, BRANCH_TYPE.EQ)
+            case "SNEVV":
+                self.S__VV(self.instr.operand1, self.instr.operand2, BRANCH_TYPE.NE)
+            case "SGTVV":
+                self.S__VV(self.instr.operand1, self.instr.operand2, BRANCH_TYPE.GT)
+            case "SLTVV":
+                self.S__VV(self.instr.operand1, self.instr.operand2, BRANCH_TYPE.LT)
+            case "SGEVV":
+                self.S__VV(self.instr.operand1, self.instr.operand2, BRANCH_TYPE.GE)
+            case "SLEVV":
+                self.S__VV(self.instr.operand1, self.instr.operand2, BRANCH_TYPE.LE)
+            case "SEQVS":
+                self.S__VS(self.instr.operand1, self.instr.operand2, BRANCH_TYPE.EQ)
+            case "SNEVS":
+                self.S__VS(self.instr.operand1, self.instr.operand2, BRANCH_TYPE.NE)
+            case "SGTVS":
+                self.S__VS(self.instr.operand1, self.instr.operand2, BRANCH_TYPE.GT)
+            case "SLTVS":
+                self.S__VS(self.instr.operand1, self.instr.operand2, BRANCH_TYPE.LT)
+            case "SGEVS":
+                self.S__VS(self.instr.operand1, self.instr.operand2, BRANCH_TYPE.GE)
+            case "SLEVS":
+                self.S__VS(self.instr.operand1, self.instr.operand2, BRANCH_TYPE.LE)
+            # case "LV":
+            #     self.LV(self.instr.operand1, self.instr.operand2)
+            # case "SV":
+            #     self.SV(self.instr.operand1, self.instr.operand2)
+            # case "LVWS":
+            #     self.LVWS(self.instr.operand1, self.instr.operand2, self.instr.operand3)
+            # case "SVWS":
+            #     self.SVWS(self.instr.operand1, self.instr.operand2, self.instr.operand3)
+            # case "LVI":
+            #     self.LVI(self.instr.operand1, self.instr.operand2, self.instr.operand3)
+            # case "SVI":
+            #     self.SVI(self.instr.operand1, self.instr.operand2, self.instr.operand3)
+            case "UNPACKLO":
+                self.UNPACKLO(self.instr.operand1, self.instr.operand2, self.instr.operand3)
+            case "UNPACKHI":
+                self.UNPACKHI(self.instr.operand1, self.instr.operand2, self.instr.operand3)
+            case "PACKLO":
+                self.PACKLO(self.instr.operand1, self.instr.operand2, self.instr.operand3)
+            case "PACKHI":
+                self.PACKHI(self.instr.operand1, self.instr.operand2, self.instr.operand3)
+        # update state
+        self.busy = False
 
     # Instruction 1 and 3
     def ___VV(self, vr1_idx, vr2_idx, vr3_idx, op):
@@ -324,9 +395,9 @@ class ComputePipeline(object):
                 raise ValueError("invalid VV op")
 
     # Instruction 2 and 4
-    def ___VS(self, vr1_idx, vr2_idx, sr1_idx, op):
+    def ___VS(self, vr1_idx, vr2_idx, scalar_data, op):
         vr2 = self.RFs['VRF'].Read(vr2_idx)
-        sr1 = self.RFs['SRF'].Read(sr1_idx)
+        sr1 = scalar_data
         match op:
             case VECTOR_OP_TYPE.ADD:
                 for i in range(self.instr.len_reg):
@@ -377,7 +448,6 @@ class ComputePipeline(object):
     def S__VS(self, vr1_idx, sr1_idx, op):
         vr1 = self.RFs['VRF'].Read(vr1_idx)
         sr1 = self.RFs['SRF'].Read(sr1_idx)
-        
         match op:
             case BRANCH_TYPE.EQ:
                 for i in range(self.instr.len_reg):
@@ -400,6 +470,54 @@ class ComputePipeline(object):
             case _:
                 raise ValueError("invalid vs branch type")
 
+    # Instruction 24
+    def UNPACKLO(self, vr1_idx, vr2_idx, vr3_idx):
+        vr2 = self.RFs['VRF'].Read(vr2_idx)
+        vr3 = self.RFs['VRF'].Read(vr3_idx)
+
+        # this works for even numbers
+        for i in range(self.instr.len_reg//2):
+            self.RFs['VRF'].write_vec_element(vr1_idx, i*2, vr2[i])
+            self.RFs['VRF'].write_vec_element(vr1_idx, i*2+1, vr3[i])
+        
+        # for odd numbers, we need to update the last element to vr2[i]
+        if self.instr.len_reg % 2 != 0:
+            i = self.instr.len_reg//2
+            self.RFs['VRF'].write_vec_element(vr1_idx, i*2, vr2[i])
+
+    # Instruction 25
+    def UNPACKHI(self, vr1_idx, vr2_idx, vr3_idx):
+        vr2 = self.RFs['VRF'].Read(vr2_idx)
+        vr3 = self.RFs['VRF'].Read(vr3_idx)
+        
+        for i in range(self.instr.len_reg//2):
+            self.RFs['VRF'].write_vec_element(vr1_idx, i*2, vr2[i + self.instr.len_reg//2])
+            self.RFs['VRF'].write_vec_element(vr1_idx, i*2+1, vr3[i + self.instr.len_reg//2])
+    
+        if self.instr.len_reg % 2 != 0:
+            i = self.instr.len_reg//2
+            self.RFs['VRF'].write_vec_element(vr1_idx, i*2, vr2[i + self.instr.len_reg//2])
+    
+    # Instruction 26
+    def PACKLO(self, vr1_idx, vr2_idx, vr3_idx):
+        vr2 = self.RFs['VRF'].Read(vr2_idx)
+        vr3 = self.RFs['VRF'].Read(vr3_idx)
+        
+        for i in range(self.instr.len_reg//2):
+            self.RFs['VRF'].write_vec_element(vr1_idx, i, vr2[i*2])
+            self.RFs['VRF'].write_vec_element(vr1_idx, i + self.instr.len_reg//2, vr3[i*2])
+    
+    # Instruction 27
+    def PACKHI(self, vr1_idx, vr2_idx, vr3_idx):
+        vr2 = self.RFs['VRF'].Read(vr2_idx)
+        vr3 = self.RFs['VRF'].Read(vr3_idx)
+
+        for i in range(self.instr.len_reg//2):
+            self.RFs['VRF'].write_vec_element(vr1_idx, i, vr2[i*2 + 1])
+            self.RFs['VRF'].write_vec_element(vr1_idx, i + self.instr.len_reg//2, vr3[i*2 + 1])
+
+
+class DataPipeline():
     # Memory Access Operations
     # Instruction 11
     def LV(self, vr1_idx, sr1_idx):
@@ -457,136 +575,8 @@ class ComputePipeline(object):
             if self.instr.mask_reg_cpy[i]:
                 self.VDMEM.Write(sr1 + vr2[i], vr1[i])
 
-    # Instruction 24
-    def UNPACKLO(self, vr1_idx, vr2_idx, vr3_idx):
-        vr2 = self.RFs['VRF'].Read(vr2_idx)
-        vr3 = self.RFs['VRF'].Read(vr3_idx)
 
-        # this works for even numbers
-        for i in range(self.instr.len_reg//2):
-            self.RFs['VRF'].write_vec_element(vr1_idx, i*2, vr2[i])
-            self.RFs['VRF'].write_vec_element(vr1_idx, i*2+1, vr3[i])
-        
-        # for odd numbers, we need to update the last element to vr2[i]
-        if self.instr.len_reg % 2 != 0:
-            i = self.instr.len_reg//2
-            self.RFs['VRF'].write_vec_element(vr1_idx, i*2, vr2[i])
-
-    # Instruction 25
-    def UNPACKHI(self, vr1_idx, vr2_idx, vr3_idx):
-        vr2 = self.RFs['VRF'].Read(vr2_idx)
-        vr3 = self.RFs['VRF'].Read(vr3_idx)
-        
-        for i in range(self.instr.len_reg//2):
-            self.RFs['VRF'].write_vec_element(vr1_idx, i*2, vr2[i + self.instr.len_reg//2])
-            self.RFs['VRF'].write_vec_element(vr1_idx, i*2+1, vr3[i + self.instr.len_reg//2])
-    
-        if self.instr.len_reg % 2 != 0:
-            i = self.instr.len_reg//2
-            self.RFs['VRF'].write_vec_element(vr1_idx, i*2, vr2[i + self.instr.len_reg//2])
-    
-    # Instruction 26
-    def PACKLO(self, vr1_idx, vr2_idx, vr3_idx):
-        vr2 = self.RFs['VRF'].Read(vr2_idx)
-        vr3 = self.RFs['VRF'].Read(vr3_idx)
-        
-        for i in range(self.instr.len_reg//2):
-            self.RFs['VRF'].write_vec_element(vr1_idx, i, vr2[i*2])
-            self.RFs['VRF'].write_vec_element(vr1_idx, i + self.instr.len_reg//2, vr3[i*2])
-    
-    # Instruction 27
-    def PACKHI(self, vr1_idx, vr2_idx, vr3_idx):
-        vr2 = self.RFs['VRF'].Read(vr2_idx)
-        vr3 = self.RFs['VRF'].Read(vr3_idx)
-
-        for i in range(self.instr.len_reg//2):
-            self.RFs['VRF'].write_vec_element(vr1_idx, i, vr2[i*2 + 1])
-            self.RFs['VRF'].write_vec_element(vr1_idx, i + self.instr.len_reg//2, vr3[i*2 + 1])
-
-    def isBusy(self):
-        return self.busy
-
-    def acceptInstr(self, instr):
-        self.busy = True
-        self.instr = instr
-        self.cycles_needed = instr.num_cycles / self.lanes * self.latency if instr.num_cycles % self.lanes == 0 \
-            else (instr.num_cycles // self.lanes + 1) * self.latency
-
-    def finishedInstr(self):
-        # update VRF
-        match self.instr.op:
-            case "ADDVV":
-                self.___VV(self.instr['operand1'], self.instr['operand2'], self.instr['operand3'], VECTOR_OP_TYPE.ADD)
-            case "SUBVV":
-                self.___VV(self.instr['operand1'], self.instr['operand2'], self.instr['operand3'], VECTOR_OP_TYPE.SUB)
-            case "MULVV":
-                self.___VV(self.instr['operand1'], self.instr['operand2'], self.instr['operand3'], VECTOR_OP_TYPE.MUL)
-            case "DIVVV":
-                self.___VV(self.instr['operand1'], self.instr['operand2'], self.instr['operand3'], VECTOR_OP_TYPE.DIV)
-            case "ADDVS":
-                self.___VS(self.instr['operand1'], self.instr['operand2'], self.instr['operand3'], VECTOR_OP_TYPE.ADD)
-            case "SUBVS":
-                self.___VS(self.instr['operand1'], self.instr['operand2'], self.instr['operand3'], VECTOR_OP_TYPE.SUB)
-            case "MULVS":
-                self.___VS(self.instr['operand1'], self.instr['operand2'], self.instr['operand3'], VECTOR_OP_TYPE.MUL)
-            case "DIVVS":
-                self.___VS(self.instr['operand1'], self.instr['operand2'], self.instr['operand3'], VECTOR_OP_TYPE.DIV)
-            case "SEQVV":
-                self.S__VV(self.instr['operand1'], self.instr['operand2'], BRANCH_TYPE.EQ)
-            case "SNEVV":
-                self.S__VV(self.instr['operand1'], self.instr['operand2'], BRANCH_TYPE.NE)
-            case "SGTVV":
-                self.S__VV(self.instr['operand1'], self.instr['operand2'], BRANCH_TYPE.GT)
-            case "SLTVV":
-                self.S__VV(self.instr['operand1'], self.instr['operand2'], BRANCH_TYPE.LT)
-            case "SGEVV":
-                self.S__VV(self.instr['operand1'], self.instr['operand2'], BRANCH_TYPE.GE)
-            case "SLEVV":
-                self.S__VV(self.instr['operand1'], self.instr['operand2'], BRANCH_TYPE.LE)
-            case "SEQVS":
-                self.S__VS(self.instr['operand1'], self.instr['operand2'], BRANCH_TYPE.EQ)
-            case "SNEVS":
-                self.S__VS(self.instr['operand1'], self.instr['operand2'], BRANCH_TYPE.NE)
-            case "SGTVS":
-                self.S__VS(self.instr['operand1'], self.instr['operand2'], BRANCH_TYPE.GT)
-            case "SLTVS":
-                self.S__VS(self.instr['operand1'], self.instr['operand2'], BRANCH_TYPE.LT)
-            case "SGEVS":
-                self.S__VS(self.instr['operand1'], self.instr['operand2'], BRANCH_TYPE.GE)
-            case "SLEVS":
-                self.S__VS(self.instr['operand1'], self.instr['operand2'], BRANCH_TYPE.LE)
-            case "LV":
-                self.LV(self.instr['operand1'], self.instr['operand2'])
-            case "SV":
-                self.SV(self.instr['operand1'], self.instr['operand2'])
-            case "LVWS":
-                self.LVWS(self.instr['operand1'], self.instr['operand2'], self.instr['operand3'])
-            case "SVWS":
-                self.SVWS(self.instr['operand1'], self.instr['operand2'], self.instr['operand3'])
-            case "LVI":
-                self.LVI(self.instr['operand1'], self.instr['operand2'], self.instr['operand3'])
-            case "SVI":
-                self.SVI(self.instr['operand1'], self.instr['operand2'], self.instr['operand3'])
-            case "UNPACKLO":
-                self.UNPACKLO(self.instr['operand1'], self.instr['operand2'], self.instr['operand3'])
-            case "UNPACKHI":
-                self.UNPACKHI(self.instr['operand1'], self.instr['operand2'], self.instr['operand3'])
-            case "PACKLO":
-                self.PACKLO(self.instr['operand1'], self.instr['operand2'], self.instr['operand3'])
-            case "PACKHI":
-                self.PACKHI(self.instr['operand1'], self.instr['operand2'], self.instr['operand3'])
-        # update state
-        self.busy = False
-
-    def update(self):
-        if self.cycles_needed == 0:
-            self.finishedInstr()
-            return self.instr
-        self.cycles_needed -= 1
-        return None
-
-
-class DMEM(object):
+class DMEM():
     # Word addressible - each address contains 32 bits.
     def __init__(self, name, iodir, addressLen):
         self.name = name
@@ -614,7 +604,7 @@ class DMEM(object):
             raise ValueError(f'invalid DMEM index: {idx}')
 
     def checkVal(self, val):
-        if type(val) is list:
+        if isinstance(val, list):
             for element in val:
                 if element > self.max_value or element < self.min_value:
                     raise ValueError('Value to write to DMEM is out of range')
@@ -652,11 +642,7 @@ class VDMEM(DMEM):
         return super().Write(idx, val)
 
 
-class SDMEM(DMEM):
-    pass
-
-
-class RegisterFile(object):
+class RegisterFile():
     def __init__(self, name, count, length=1, size=32):
         self.name       = name
         self.reg_count  = count
@@ -687,7 +673,7 @@ class RegisterFile(object):
     # assuming that val is list for vector register
     # and int for scalar register
     def checkVal(self, val):
-        if type(val) is list:
+        if isinstance(val, list):
             for element in val:
                 if element > self.max_value or element < self.min_value:
                     raise ValueError('Value to write to register is out of range')
@@ -702,8 +688,7 @@ class RegisterFile(object):
         idx = self.getIdx(idx)
         if self.name == 'SRF':
             return self.registers[idx][0]
-        else:
-            return self.registers[idx]
+        return self.registers[idx]
 
     def Write(self, idx, val):
         '''
@@ -714,18 +699,18 @@ class RegisterFile(object):
         idx = self.getIdx(idx)
         self.checkVal(val)
         if self.name == 'SRF':
-            if isinstance(val, int):
+            if not isinstance(val, int):
                 raise ValueError('expected type int for SRF write')
             self.registers[idx][0] = val
         else:
             if not isinstance(val, list) or len(val) != 64:
                 raise ValueError('expected type list with length 64 for VRF write')
             self.registers[idx] = val
-            
+
     def write_vec_element(self, idx, ele, val):
         idx = self.getIdx(idx)
         if self.name == 'SRF':
-            raise Exception()
+            raise ValueError()
         if ele >= len(self.registers[idx]):
             raise ValueError('element out of bounds')
         self.checkVal(val)
@@ -746,8 +731,9 @@ class RegisterFile(object):
             raise
 
 
+# ************************ Core *******************************
 class Core():
-    def __init__(self, imem, sdmem, vdmem, config):
+    def __init__(self, imem: IMEM, sdmem, vdmem, config):
         self.IMEM = imem
         self.SDMEM = sdmem
         self.VDMEM = vdmem
@@ -759,15 +745,15 @@ class Core():
         self.len_reg = self.MVL
         self.mask_reg = [True for _ in range(self.MVL)]
         self.pc = 0
-        self.data_queue = DispatchQueue(config['dataQueueDepth'])
-        self.compute_queue = DispatchQueue(config['computeQueueDepth'])
+        self.data_queue = DispatchQueue(config.parameters['dataQueueDepth'])
+        self.compute_queue = DispatchQueue(config.parameters['computeQueueDepth'])
         self.busyboard = BusyBoard()
-        self.decoder = Decoder()
+        self.decoder = Decoder(self.RFs['SRF'])
         self.compute_pipelines = {
-            'Vadd': ComputePipeline('Vadd', config['pipelineDepthAdd'], config['numLanes'], self.RFs),
-            'Vmul': ComputePipeline('Vmul', config['pipelineDepthMul'], config['numLanes'], self.RFs),
-            'Vdiv': ComputePipeline('Vdiv', config['pipelineDepthDiv'], config['numLanes'], self.RFs),
-            'Vshuffle': ComputePipeline('Vshu', config['pipelineDepthShuffle'], config['numLanes'], self.RFs)
+            'Vadd': ComputePipeline('Vadd', config.parameters['pipelineDepthAdd'], config.parameters['numLanes'], self.RFs),
+            'Vmul': ComputePipeline('Vmul', config.parameters['pipelineDepthMul'], config.parameters['numLanes'], self.RFs),
+            'Vdiv': ComputePipeline('Vdiv', config.parameters['pipelineDepthDiv'], config.parameters['numLanes'], self.RFs),
+            'Vshuffle': ComputePipeline('Vshuffle', config.parameters['pipelineDepthShuffle'], config.parameters['numLanes'], self.RFs)
         }
         self.cycle_count = 1 # we start cycle count at 1 because we assume instr[0] has already been fetched
 
@@ -777,88 +763,98 @@ class Core():
         self.len_reg = val
 
     def run(self):
-        instr = self.IMEM.Read(self.pc)
+        instr_str = self.IMEM.Read(self.pc) # read instr[0]
         while True:
-            # EX stage (backend)
+            print(f"cycle {self.cycle_count} - running instr {self.pc}: {instr_str}")
+            # ************************ backend **************************************
+            # update compute pipelines and check if any instructions are complete
             for pipeline in self.compute_pipelines.values():
                 completed_instr = pipeline.update()
                 if completed_instr is not None:
                     self.busyboard.clear(completed_instr.regs)
+            # TODO: update data pipeline
 
             # add instruction to compute pipeline if possible
-            curr_instr = self.compute_queue.peek()
-            if curr_instr is not None and not self.compute_pipelines[curr_instr.pipeline_needed].isBusy():
-                self.compute_pipelines[curr_instr.pipeline_needed].acceptInstr(curr_instr)
+            compute_queue_head = self.compute_queue.peek()
+            if compute_queue_head is not None and not self.compute_pipelines[compute_queue_head.pipeline_needed].isBusy():
+                self.compute_pipelines[compute_queue_head.pipeline_needed].acceptInstr(compute_queue_head)
                 self.compute_queue.pop()
-            # add instruction to data pipeline if possible
 
+            # TODO: add instruction to data pipeline if possible
+
+            # ************************ frontend **************************************
             # ID stage
             stall_frontend = False
             # first decode instruction
-            decoded_instr = self.decoder.decode(instr, self.len_reg, self.mask_reg)
+            decoded_instr = self.decoder.decode(instr_str, self.len_reg, self.mask_reg)
             # then check data dependence
             if self.busyboard.isBusy(decoded_instr.regs):
                 stall_frontend = True
-            # then check structural dependence
-            match decoded_instr.type:
-                case "LSI":
-                    if self.data_queue.isFull():
+            else:
+                # then check structural dependence
+                match decoded_instr.type:
+                    case "LSI":
+                        if self.data_queue.isFull():
+                            stall_frontend = True
+                        else:
+                            self.busyboard.setBusy(decoded_instr.regs)
+                            self.data_queue.push(decoded_instr)
+                    case "CI":
+                        if self.compute_queue.isFull():
+                            stall_frontend = True
+                        else:
+                            self.busyboard.setBusy(decoded_instr.regs)
+                            self.compute_queue.push(decoded_instr)
+                    case "HALT": # for HALT we just stall the frontend (no more instructions to fetch) and wait until all instructions are executed
                         stall_frontend = True
-                    else:
-                        self.data_queue.push(decoded_instr)
-                case "CI":
-                    if self.compute_queue.isFull():
-                        stall_frontend = True
-                    else:
-                        self.compute_queue.push(decoded_instr)
-                case "HALT": # for HALT we just stall the frontend (no more instructions to fetch) and wait until all instructions are executed
-                    stall_frontend = True
-                    if self.data_queue.isEmpty() and self.compute_queue.isEmpty() and not self.compute_pipelines['Vadd'].busy \
-                        and not self.compute_pipelines['Vmul'].busy and not self.compute_pipelines['Vdiv'].busy \
-                            and not self.compute_pipelines['Vshuffle'].busy:
-                        break
-                case "BRANCH": # for branch, we just continue to the next instruction
-                    self.pc += 1
-                    self.cycle_count += 1
-                    continue
-                case "SI":
-                    ''' ALL SI take 1 cycle '''
-                    match decoded_instr.op:
-                        case "CVM":
-                            self.CVM()
-                        case "POP":
-                            self.POP(decoded_instr.operand1)
-                        case "MTCL":
-                            self.MTCL(decoded_instr['operand1'])
-                        case "MFCL":
-                            self.MFCL(decoded_instr['operand1'])
-                        case "LS":
-                            self.LS(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'])
-                        case "SS":
-                            self.SS(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'])
-                        case "ADD":
-                            self.scalarExec(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], SCALAR_OP_TYPE.ADD)
-                        case "SUB":
-                            self.scalarExec(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], SCALAR_OP_TYPE.SUB)
-                        case "AND":
-                            self.scalarExec(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], SCALAR_OP_TYPE.AND)
-                        case "OR":
-                            self.scalarExec(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], SCALAR_OP_TYPE.OR)
-                        case "XOR":
-                            self.scalarExec(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], SCALAR_OP_TYPE.XOR)
-                        case "SLL":
-                            self.scalarExec(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], SCALAR_OP_TYPE.SLL)
-                        case "SRL":
-                            self.scalarExec(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], SCALAR_OP_TYPE.SRL)
-                        case "SRA":
-                            self.scalarExec(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], SCALAR_OP_TYPE.SRA)
-                        case _:
-                            raise ValueError('invalid SI op:', decoded_instr.op)
-                case _:
-                    raise ValueError('invalid instr type:', str(decoded_instr.type))
+                        if self.data_queue.isEmpty() and self.compute_queue.isEmpty() and not self.compute_pipelines['Vadd'].busy \
+                            and not self.compute_pipelines['Vmul'].busy and not self.compute_pipelines['Vdiv'].busy \
+                                and not self.compute_pipelines['Vshuffle'].busy:
+                            break
+                    case "BRANCH": # for branch, we just continue to the next instruction
+                        self.pc += 1
+                        self.cycle_count += 1
+                        instr_str = self.IMEM.Read(self.pc)
+                        continue
+                    case "SI":
+                        ''' ALL SI take 1 cycle '''
+                        match decoded_instr.op:
+                            case "CVM":
+                                self.CVM()
+                            case "POP":
+                                self.POP(decoded_instr.operand1)
+                            case "MTCL":
+                                self.MTCL(decoded_instr.operand1)
+                            case "MFCL":
+                                self.MFCL(decoded_instr.operand1)
+                            case "LS":
+                                self.LS(decoded_instr.operand1, decoded_instr.operand2, decoded_instr.operand3)
+                            case "SS":
+                                self.SS(decoded_instr.operand1, decoded_instr.operand2, decoded_instr.operand3)
+                            case "ADD":
+                                self.scalarExec(decoded_instr.operand1, decoded_instr.operand2, decoded_instr.operand3, SCALAR_OP_TYPE.ADD)
+                            case "SUB":
+                                self.scalarExec(decoded_instr.operand1, decoded_instr.operand2, decoded_instr.operand3, SCALAR_OP_TYPE.SUB)
+                            case "AND":
+                                self.scalarExec(decoded_instr.operand1, decoded_instr.operand2, decoded_instr.operand3, SCALAR_OP_TYPE.AND)
+                            case "OR":
+                                self.scalarExec(decoded_instr.operand1, decoded_instr.operand2, decoded_instr.operand3, SCALAR_OP_TYPE.OR)
+                            case "XOR":
+                                self.scalarExec(decoded_instr.operand1, decoded_instr.operand2, decoded_instr.operand3, SCALAR_OP_TYPE.XOR)
+                            case "SLL":
+                                self.scalarExec(decoded_instr.operand1, decoded_instr.operand2, decoded_instr.operand3, SCALAR_OP_TYPE.SLL)
+                            case "SRL":
+                                self.scalarExec(decoded_instr.operand1, decoded_instr.operand2, decoded_instr.operand3, SCALAR_OP_TYPE.SRL)
+                            case "SRA":
+                                self.scalarExec(decoded_instr.operand1, decoded_instr.operand2, decoded_instr.operand3, SCALAR_OP_TYPE.SRA)
+                            case _:
+                                raise ValueError('invalid SI op:', decoded_instr.op)
+                    case _:
+                        raise ValueError('invalid instr type:', str(decoded_instr.type))
             # IF stage
             if not stall_frontend:
                 self.pc += 1
+                instr_str = self.IMEM.Read(self.pc)
             self.cycle_count += 1
 
     # Instruction 7

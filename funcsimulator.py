@@ -368,7 +368,6 @@ class Core():
     def ___VV(self, vr1_idx, vr2_idx, vr3_idx, op):
         vr2 = self.RFs['VRF'].Read(vr2_idx)
         vr3 = self.RFs['VRF'].Read(vr3_idx)
-        
         # Q: not sure if we write zeros or retain?
         match op:
             case self.VECTOR_OP_TYPE.ADD:
@@ -394,7 +393,6 @@ class Core():
     def ___VS(self, vr1_idx, vr2_idx, sr1_idx, op):
         vr2 = self.RFs['VRF'].Read(vr2_idx)
         sr1 = self.RFs['SRF'].Read(sr1_idx)
-        
         match op:
             case self.VECTOR_OP_TYPE.ADD:
                 for i in range(self.len_reg):

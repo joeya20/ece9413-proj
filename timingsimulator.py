@@ -6,7 +6,7 @@ from typing import Literal
 
 '''TODO
 Frontend:
-1. Finish instruction decode
+1. implement new instructions support
 Backend:
 1.1 Modify VDMEM to be banked
 1.2 Implement bank conflicts
@@ -128,7 +128,7 @@ class Decoder():
                 raise ValueError(f'invalid instruction: {instr_str}')
             instr.operand1 = instr_dict['operand1']
         # SI instructions with no operand
-        elif instr.op in ['CVM']:
+        elif instr.op == 'CVM':
             instr.type = 'SI'
         # CI instructions
         elif instr.op in ['ADDVV', 'SUBVV', 'ADDVS', 'SUBVS', 'MULVV', 'MULVS', 'DIVVV', 'DIVVS',
@@ -274,16 +274,19 @@ class IMEM():
 
 
 # ************************ Backend *******************************
-class ComputePipeline():
+class ExecPipeline():
     '''base class for vector compute unit (ADD,SUB,MUL,DIV)'''
-    def __init__(self, type, depth, lanes, RFs) -> None:
+    def __init__(self, type, depth, num_lanes, RFs, VDMEM=None, num_banks=None) -> None:
         self.depth = int(depth)
         self.type = type
         self.busy = False
         self.instr = None
         self.cycles_needed = 0
         self.RFs = RFs
-        self.lanes = int(lanes)
+        self.num_lanes = int(num_lanes)
+        # for Vls
+        self.VDMEM = VDMEM
+        self.num_banks = num_banks
 
     def update(self):
         self.cycles_needed -= 1
@@ -298,11 +301,15 @@ class ComputePipeline():
     def acceptInstr(self, instr):
         self.busy = True
         self.instr = instr
-        print(f'operations needed: {instr.num_operations}')
-        interations_needed = int((instr.num_operations + instr.num_operations % self.lanes) / self.lanes)
-        print(f'interations needed: {interations_needed}')
-        self.cycles_needed = self.depth + interations_needed - 1
-        print(f'cycles needed: {self.cycles_needed}')
+        if self.instr.type == 'CI':
+            print(f'operations needed: {instr.num_operations}')
+            # pad num operations to the LCM of num_lanes
+            interations_needed = int((instr.num_operations + instr.num_operations % self.num_lanes) / self.num_lanes)
+            print(f'interations needed: {interations_needed}')
+            self.cycles_needed = self.depth + interations_needed - 1
+            print(f'cycles needed: {self.cycles_needed}')
+        else: # LSI
+            pass
 
     def finishedInstr(self):
         # update VRF
@@ -347,18 +354,18 @@ class ComputePipeline():
                 self.S__VS(self.instr.operand1, self.instr.operand2, BRANCH_TYPE.GE)
             case "SLEVS":
                 self.S__VS(self.instr.operand1, self.instr.operand2, BRANCH_TYPE.LE)
-            # case "LV":
-            #     self.LV(self.instr.operand1, self.instr.operand2)
-            # case "SV":
-            #     self.SV(self.instr.operand1, self.instr.operand2)
-            # case "LVWS":
-            #     self.LVWS(self.instr.operand1, self.instr.operand2, self.instr.operand3)
-            # case "SVWS":
-            #     self.SVWS(self.instr.operand1, self.instr.operand2, self.instr.operand3)
-            # case "LVI":
-            #     self.LVI(self.instr.operand1, self.instr.operand2, self.instr.operand3)
-            # case "SVI":
-            #     self.SVI(self.instr.operand1, self.instr.operand2, self.instr.operand3)
+            case "LV":
+                self.LV(self.instr.operand1, self.instr.operand2)
+            case "SV":
+                self.SV(self.instr.operand1, self.instr.operand2)
+            case "LVWS":
+                self.LVWS(self.instr.operand1, self.instr.operand2, self.instr.operand3)
+            case "SVWS":
+                self.SVWS(self.instr.operand1, self.instr.operand2, self.instr.operand3)
+            case "LVI":
+                self.LVI(self.instr.operand1, self.instr.operand2, self.instr.operand3)
+            case "SVI":
+                self.SVI(self.instr.operand1, self.instr.operand2, self.instr.operand3)
             case "UNPACKLO":
                 self.UNPACKLO(self.instr.operand1, self.instr.operand2, self.instr.operand3)
             case "UNPACKHI":
@@ -469,55 +476,7 @@ class ComputePipeline():
                     self.instr.mask_reg_ref[i] = vr1[i] <= sr1
             case _:
                 raise ValueError("invalid vs branch type")
-
-    # Instruction 24
-    def UNPACKLO(self, vr1_idx, vr2_idx, vr3_idx):
-        vr2 = self.RFs['VRF'].Read(vr2_idx)
-        vr3 = self.RFs['VRF'].Read(vr3_idx)
-
-        # this works for even numbers
-        for i in range(self.instr.len_reg//2):
-            self.RFs['VRF'].write_vec_element(vr1_idx, i*2, vr2[i])
-            self.RFs['VRF'].write_vec_element(vr1_idx, i*2+1, vr3[i])
-        
-        # for odd numbers, we need to update the last element to vr2[i]
-        if self.instr.len_reg % 2 != 0:
-            i = self.instr.len_reg//2
-            self.RFs['VRF'].write_vec_element(vr1_idx, i*2, vr2[i])
-
-    # Instruction 25
-    def UNPACKHI(self, vr1_idx, vr2_idx, vr3_idx):
-        vr2 = self.RFs['VRF'].Read(vr2_idx)
-        vr3 = self.RFs['VRF'].Read(vr3_idx)
-        
-        for i in range(self.instr.len_reg//2):
-            self.RFs['VRF'].write_vec_element(vr1_idx, i*2, vr2[i + self.instr.len_reg//2])
-            self.RFs['VRF'].write_vec_element(vr1_idx, i*2+1, vr3[i + self.instr.len_reg//2])
-    
-        if self.instr.len_reg % 2 != 0:
-            i = self.instr.len_reg//2
-            self.RFs['VRF'].write_vec_element(vr1_idx, i*2, vr2[i + self.instr.len_reg//2])
-    
-    # Instruction 26
-    def PACKLO(self, vr1_idx, vr2_idx, vr3_idx):
-        vr2 = self.RFs['VRF'].Read(vr2_idx)
-        vr3 = self.RFs['VRF'].Read(vr3_idx)
-        
-        for i in range(self.instr.len_reg//2):
-            self.RFs['VRF'].write_vec_element(vr1_idx, i, vr2[i*2])
-            self.RFs['VRF'].write_vec_element(vr1_idx, i + self.instr.len_reg//2, vr3[i*2])
-    
-    # Instruction 27
-    def PACKHI(self, vr1_idx, vr2_idx, vr3_idx):
-        vr2 = self.RFs['VRF'].Read(vr2_idx)
-        vr3 = self.RFs['VRF'].Read(vr3_idx)
-
-        for i in range(self.instr.len_reg//2):
-            self.RFs['VRF'].write_vec_element(vr1_idx, i, vr2[i*2 + 1])
-            self.RFs['VRF'].write_vec_element(vr1_idx, i + self.instr.len_reg//2, vr3[i*2 + 1])
-
-
-class DataPipeline():
+            
     # Memory Access Operations
     # Instruction 11
     def LV(self, vr1_idx, sr1_idx):
@@ -575,6 +534,50 @@ class DataPipeline():
             if self.instr.mask_reg_cpy[i]:
                 self.VDMEM.Write(sr1 + vr2[i], vr1[i])
 
+    # Instruction 24
+    def UNPACKLO(self, vr1_idx, vr2_idx, vr3_idx):
+        vr2 = self.RFs['VRF'].Read(vr2_idx)
+        vr3 = self.RFs['VRF'].Read(vr3_idx)
+        # this works for even numbers
+        for i in range(self.instr.len_reg//2):
+            self.RFs['VRF'].write_vec_element(vr1_idx, i*2, vr2[i])
+            self.RFs['VRF'].write_vec_element(vr1_idx, i*2+1, vr3[i])
+        # for odd numbers, we need to update the last element to vr2[i]
+        if self.instr.len_reg % 2 != 0:
+            i = self.instr.len_reg//2
+            self.RFs['VRF'].write_vec_element(vr1_idx, i*2, vr2[i])
+
+    # Instruction 25
+    def UNPACKHI(self, vr1_idx, vr2_idx, vr3_idx):
+        vr2 = self.RFs['VRF'].Read(vr2_idx)
+        vr3 = self.RFs['VRF'].Read(vr3_idx)
+        
+        for i in range(self.instr.len_reg//2):
+            self.RFs['VRF'].write_vec_element(vr1_idx, i*2, vr2[i + self.instr.len_reg//2])
+            self.RFs['VRF'].write_vec_element(vr1_idx, i*2+1, vr3[i + self.instr.len_reg//2])
+    
+        if self.instr.len_reg % 2 != 0:
+            i = self.instr.len_reg//2
+            self.RFs['VRF'].write_vec_element(vr1_idx, i*2, vr2[i + self.instr.len_reg//2])
+    
+    # Instruction 26
+    def PACKLO(self, vr1_idx, vr2_idx, vr3_idx):
+        vr2 = self.RFs['VRF'].Read(vr2_idx)
+        vr3 = self.RFs['VRF'].Read(vr3_idx)
+        
+        for i in range(self.instr.len_reg//2):
+            self.RFs['VRF'].write_vec_element(vr1_idx, i, vr2[i*2])
+            self.RFs['VRF'].write_vec_element(vr1_idx, i + self.instr.len_reg//2, vr3[i*2])
+    
+    # Instruction 27
+    def PACKHI(self, vr1_idx, vr2_idx, vr3_idx):
+        vr2 = self.RFs['VRF'].Read(vr2_idx)
+        vr3 = self.RFs['VRF'].Read(vr3_idx)
+
+        for i in range(self.instr.len_reg//2):
+            self.RFs['VRF'].write_vec_element(vr1_idx, i, vr2[i*2 + 1])
+            self.RFs['VRF'].write_vec_element(vr1_idx, i + self.instr.len_reg//2, vr3[i*2 + 1])
+
 
 class DMEM():
     # Word addressible - each address contains 32 bits.
@@ -612,11 +615,24 @@ class DMEM():
             if val > self.max_value or val < self.min_value:
                 raise ValueError('Value to write to DMEM is out of range')
 
+    # TODO: implement vector read later?
     def Read(self, idx): # Use this to read from DMEM.
-        pass # Replace this line with your code here.
+        '''
+        returns the data word at the provided index
+        this can only service word reads, not vector reads
+        '''
+        self.checkIdx(idx)
+        return self.data[idx]
 
+    # TODO: implement vector write later?
     def Write(self, idx, val): # Use this to write into DMEM.
-        pass # Replace this line with your code here.
+        '''
+        update the data word at the provided index using val
+        this can only service word writes, not vector writes
+        '''
+        self.checkIdx(idx)
+        self.checkVal(val)
+        self.data[idx] = val
 
     def dump(self):
         try:
@@ -628,18 +644,6 @@ class DMEM():
             print(self.name, "- ERROR: Couldn't open output file in path:", self.opfilepath)
             print("Exception:", str(e))
             raise
-
-
-class VDMEM(DMEM):
-    def __init__(self, name, iodir, addressLen, numBanks):
-        super().__init__(name, iodir, addressLen)
-        self.numBanks = numBanks
-
-    def Read(self, idx):
-        return super().Read(idx)
-    
-    def Write(self, idx, val):
-        return super().Write(idx, val)
 
 
 class RegisterFile():
@@ -749,11 +753,12 @@ class Core():
         self.compute_queue = DispatchQueue(config.parameters['computeQueueDepth'])
         self.busyboard = BusyBoard()
         self.decoder = Decoder(self.RFs['SRF'])
-        self.compute_pipelines = {
-            'Vadd': ComputePipeline('Vadd', config.parameters['pipelineDepthAdd'], config.parameters['numLanes'], self.RFs),
-            'Vmul': ComputePipeline('Vmul', config.parameters['pipelineDepthMul'], config.parameters['numLanes'], self.RFs),
-            'Vdiv': ComputePipeline('Vdiv', config.parameters['pipelineDepthDiv'], config.parameters['numLanes'], self.RFs),
-            'Vshuffle': ComputePipeline('Vshuffle', config.parameters['pipelineDepthShuffle'], config.parameters['numLanes'], self.RFs)
+        self.exec_pipelines = {
+            'Vadd': ExecPipeline('Vadd', config.parameters['pipelineDepthAdd'], config.parameters['numLanes'], self.RFs),
+            'Vmul': ExecPipeline('Vmul', config.parameters['pipelineDepthMul'], config.parameters['numLanes'], self.RFs),
+            'Vdiv': ExecPipeline('Vdiv', config.parameters['pipelineDepthDiv'], config.parameters['numLanes'], self.RFs),
+            'Vshuffle': ExecPipeline('Vshuffle', config.parameters['pipelineDepthShuffle'], config.parameters['numLanes'], self.RFs),
+            'Vls': ExecPipeline('Vls', config.parameters['vlsPipelineDepth'], 1, self.RFs, self.VDMEM, config.parameters['vdmNumBanks'])
         }
         self.cycle_count = 1 # we start cycle count at 1 because we assume instr[0] has already been fetched
 
@@ -768,7 +773,7 @@ class Core():
             print(f"cycle {self.cycle_count} - running instr {self.pc}: {instr_str}")
             # ************************ backend **************************************
             # update compute pipelines and check if any instructions are complete
-            for pipeline in self.compute_pipelines.values():
+            for pipeline in self.exec_pipelines.values():
                 completed_instr = pipeline.update()
                 if completed_instr is not None:
                     self.busyboard.clear(completed_instr.regs)
@@ -776,8 +781,8 @@ class Core():
 
             # add instruction to compute pipeline if possible
             compute_queue_head = self.compute_queue.peek()
-            if compute_queue_head is not None and not self.compute_pipelines[compute_queue_head.pipeline_needed].isBusy():
-                self.compute_pipelines[compute_queue_head.pipeline_needed].acceptInstr(compute_queue_head)
+            if compute_queue_head is not None and not self.exec_pipelines[compute_queue_head.pipeline_needed].isBusy():
+                self.exec_pipelines[compute_queue_head.pipeline_needed].acceptInstr(compute_queue_head)
                 self.compute_queue.pop()
 
             # TODO: add instruction to data pipeline if possible
@@ -807,9 +812,9 @@ class Core():
                             self.compute_queue.push(decoded_instr)
                     case "HALT": # for HALT we just stall the frontend (no more instructions to fetch) and wait until all instructions are executed
                         stall_frontend = True
-                        if self.data_queue.isEmpty() and self.compute_queue.isEmpty() and not self.compute_pipelines['Vadd'].busy \
-                            and not self.compute_pipelines['Vmul'].busy and not self.compute_pipelines['Vdiv'].busy \
-                                and not self.compute_pipelines['Vshuffle'].busy:
+                        if self.data_queue.isEmpty() and self.compute_queue.isEmpty() and not self.exec_pipelines['Vadd'].busy \
+                            and not self.exec_pipelines['Vmul'].busy and not self.exec_pipelines['Vdiv'].busy \
+                                and not self.exec_pipelines['Vshuffle'].busy and not self.exec_pipelines['Vls'].busy:
                             break
                     case "BRANCH": # for branch, we just continue to the next instruction
                         self.pc += 1

@@ -8,8 +8,8 @@ from typing import Literal
 Frontend:
 1. implement new instructions support
 Backend:
-1.1 Modify VDMEM to be banked
-1.2 Implement bank conflicts
+1 Implement LSI cycles needed
+    1.1 bank conflicts!
 '''
 
 
@@ -72,12 +72,12 @@ class Config():
 
 
 # ************************ Frontend *******************************
-# gets created at decode stage
 class Instruction():
+    ''' instruction struct that gets created at decode stage '''
     def __init__(self, len_reg, mask_reg) -> None:
-        self.len_reg = len_reg
-        self.mask_reg_cpy = mask_reg[:]
-        self.mask_reg_ref = mask_reg
+        self.len_reg = len_reg          # copy so that we have data of when it was "dispatched"
+        self.mask_reg_cpy = mask_reg[:] # copy so that we have data of when it was "dispatched"
+        self.mask_reg_ref = mask_reg    # reference so that we can update it for S__VV/S__VS instrs
         self.op = None
         self.operand1 = None
         self.operand2 = None
@@ -275,7 +275,7 @@ class IMEM():
 
 # ************************ Backend *******************************
 class ExecPipeline():
-    '''base class for vector compute unit (ADD,SUB,MUL,DIV)'''
+    ''' class for vector compute unit '''
     def __init__(self, type, depth, num_lanes, RFs, VDMEM=None, num_banks=None) -> None:
         self.depth = int(depth)
         self.type = type
@@ -302,6 +302,7 @@ class ExecPipeline():
         self.busy = True
         self.instr = instr
         if self.instr.type == 'CI':
+            print(f'CI instruction: {self.instr.op}')
             print(f'operations needed: {instr.num_operations}')
             # pad num operations to the LCM of num_lanes
             interations_needed = int((instr.num_operations + instr.num_operations % self.num_lanes) / self.num_lanes)
@@ -309,7 +310,7 @@ class ExecPipeline():
             self.cycles_needed = self.depth + interations_needed - 1
             print(f'cycles needed: {self.cycles_needed}')
         else: # LSI
-            pass
+            print(f'LSI instruction: {self.instr.op}')
 
     def finishedInstr(self):
         # update VRF
@@ -615,7 +616,6 @@ class DMEM():
             if val > self.max_value or val < self.min_value:
                 raise ValueError('Value to write to DMEM is out of range')
 
-    # TODO: implement vector read later?
     def Read(self, idx): # Use this to read from DMEM.
         '''
         returns the data word at the provided index
@@ -624,7 +624,6 @@ class DMEM():
         self.checkIdx(idx)
         return self.data[idx]
 
-    # TODO: implement vector write later?
     def Write(self, idx, val): # Use this to write into DMEM.
         '''
         update the data word at the provided index using val
@@ -768,16 +767,16 @@ class Core():
         self.len_reg = val
 
     def run(self):
-        instr_str = self.IMEM.Read(self.pc) # read instr[0]
         while True:
+            instr_str = self.IMEM.Read(self.pc) # reads instr[0] first
             print(f"cycle {self.cycle_count} - running instr {self.pc}: {instr_str}")
+
             # ************************ backend **************************************
-            # update compute pipelines and check if any instructions are complete
+            # update pipelines and check if any instructions are complete
             for pipeline in self.exec_pipelines.values():
                 completed_instr = pipeline.update()
                 if completed_instr is not None:
                     self.busyboard.clear(completed_instr.regs)
-            # TODO: update data pipeline
 
             # add instruction to compute pipeline if possible
             compute_queue_head = self.compute_queue.peek()
@@ -785,7 +784,11 @@ class Core():
                 self.exec_pipelines[compute_queue_head.pipeline_needed].acceptInstr(compute_queue_head)
                 self.compute_queue.pop()
 
-            # TODO: add instruction to data pipeline if possible
+            # add instruction to data pipeline if possible
+            data_queue_head = self.data_queue.peek()
+            if data_queue_head is not None and not self.exec_pipelines['Vls'].isBusy():
+                self.exec_pipelines['Vls'].acceptInstr(data_queue_head)
+                self.data_queue.pop()
 
             # ************************ frontend **************************************
             # ID stage
@@ -819,7 +822,6 @@ class Core():
                     case "BRANCH": # for branch, we just continue to the next instruction
                         self.pc += 1
                         self.cycle_count += 1
-                        instr_str = self.IMEM.Read(self.pc)
                         continue
                     case "SI":
                         ''' ALL SI take 1 cycle '''
@@ -859,7 +861,6 @@ class Core():
             # IF stage
             if not stall_frontend:
                 self.pc += 1
-                instr_str = self.IMEM.Read(self.pc)
             self.cycle_count += 1
 
     # Instruction 7

@@ -7,9 +7,6 @@ from typing import Literal
 '''TODO
 Frontend:
 1. implement new instructions support
-Backend:
-1 Implement LSI cycles needed
-    1.1 bank conflicts!
 '''
 
 
@@ -86,9 +83,9 @@ class Instruction():
         # for vector instructions only
         self.num_operations = None
         self.regs = []
-        self.pipeline_needed: Literal['Vadd', 'Vmul', 'Vdiv', 'Vshuffle'] | None = None
+        self.pipeline_needed: Literal['Vadd', 'Vmul', 'Vdiv', 'Vshuffle', 'Vls'] | None = None
         self.scalar_data = None
-        self.address = None
+        self.addr = None
 
 
 # Instruction Decoder
@@ -180,7 +177,9 @@ class Decoder():
         # LSI instructions
         elif instr.op in ['LV', 'LVWS', 'LVI', 'SV', 'SVWS', 'SVI']:
             instr.type = 'LSI'
-            # TODO
+            instr.pipeline_needed = 'Vls'
+            instr.operand1 = instr_dict['operand1']
+            instr.addr = None # TODO
 
         return instr
 
@@ -311,6 +310,28 @@ class ExecPipeline():
             print(f'cycles needed: {self.cycles_needed}')
         else: # LSI
             print(f'LSI instruction: {self.instr.op}')
+            # the vls pipeline is stalled when there is a bank conflict
+            # until the first access to the bank is completed (leaves the pipeline)
+            # how do we model that?
+            addr_idx = 0
+            self.cycles_needed = 0
+            vls_pipeline = [None] * self.depth # this tracks the state of the pipeline
+            while addr_idx < len(instr.addr):
+                # if instr.mask_reg_cpy[addr_idx]: # does this work?? (how do we keep track of mask reg)
+                bank_idx = instr.addr[addr_idx] % self.num_banks    # get which bank to access for current addr
+                for stage in vls_pipeline:
+                    # add access to pipeline if there's no conflict
+                    if stage is not None and stage['bank_idx'] != bank_idx:
+                        vls_pipeline.append(
+                            {
+                                'bank_idx': bank_idx
+                            }
+                        )
+                        addr_idx += 1
+                # increment cycles needed and shift pipeline
+                self.cycles_needed += 1
+                vls_pipeline[:-1] = vls_pipeline[1:] + [None]
+                assert len(vls_pipeline) == self.depth  # DEV error checking
 
     def finishedInstr(self):
         # update VRF

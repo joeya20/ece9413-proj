@@ -378,17 +378,17 @@ class ExecPipeline():
             case "SLEVS":
                 self.S__VS(self.instr.operand1, self.instr.operand2, BRANCH_TYPE.LE)
             case "LV":
-                self.LV(self.instr.operand1, self.instr.operand2)
+                self.LV(self.instr.operand1, self.instr.addr)
             case "SV":
-                self.SV(self.instr.operand1, self.instr.operand2)
+                self.SV(self.instr.operand1, self.instr.addr)
             case "LVWS":
-                self.LVWS(self.instr.operand1, self.instr.operand2, self.instr.operand3)
+                self.LVWS(self.instr.operand1, self.instr.addr)
             case "SVWS":
-                self.SVWS(self.instr.operand1, self.instr.operand2, self.instr.operand3)
+                self.SVWS(self.instr.operand1, self.instr.addr)
             case "LVI":
-                self.LVI(self.instr.operand1, self.instr.operand2, self.instr.operand3)
+                self.LVI(self.instr.operand1, self.instr.addr)
             case "SVI":
-                self.SVI(self.instr.operand1, self.instr.operand2, self.instr.operand3)
+                self.SVI(self.instr.operand1, self.instr.addr)
             case "UNPACKLO":
                 self.UNPACKLO(self.instr.operand1, self.instr.operand2, self.instr.operand3)
             case "UNPACKHI":
@@ -499,63 +499,44 @@ class ExecPipeline():
                     self.instr.mask_reg_ref[i] = vr1[i] <= sr1
             case _:
                 raise ValueError("invalid vs branch type")
-            
+
     # Memory Access Operations
     # Instruction 11
-    def LV(self, vr1_idx, sr1_idx):
-        sr1 = self.RFs['SRF'].Read(sr1_idx)
-        for i in range(self.instr.len_reg):
-            if self.instr.mask_reg_cpy[i]:
-                val = self.VDMEM.Read(sr1 + i)
-                self.RFs['VRF'].write_vec_element(vr1_idx, i, val)
+    def LV(self, vr1_idx, addrs):
+        for i, addr in enumerate(addrs):
+            val = self.VDMEM.Read(addr)
+            self.RFs['VRF'].write_vec_element(vr1_idx, i, val)
 
     # Instruction 12
-    def SV(self, vr1_idx, sr1_idx):
+    def SV(self, vr1_idx, addrs):
         vr1 = self.RFs['VRF'].Read(vr1_idx)
-        sr1 = self.RFs['SRF'].Read(sr1_idx)
-        for i in range(self.instr.len_reg):
-            if self.instr.mask_reg_cpy[i]:
-                self.VDMEM.Write(sr1+i, vr1[i])
-        
+        for i, addr in enumerate(addrs):
+            self.VDMEM.Write(addr, vr1[i])
+
     # Instruction 13
     # stride applies to both mem read and vrf write?
-    def LVWS(self, vr1_idx, sr1_idx, sr2_idx):
-        sr1 = self.RFs['SRF'].Read(sr1_idx)
-        sr2 = self.RFs['SRF'].Read(sr2_idx)
-        for i in range(self.instr.len_reg):
-            if self.instr.mask_reg_cpy[i]:
-                val = self.VDMEM.Read(sr1 + i * sr2)
-                self.RFs['VRF'].write_vec_element(vr1_idx, i, val)
-            
+    def LVWS(self, vr1_idx, addrs):
+        for i, addr in enumerate(addrs):
+            val = self.VDMEM.Read(addr)
+            self.RFs['VRF'].write_vec_element(vr1_idx, i, val)
+
     # Instruction 14
-    def SVWS(self, vr1_idx, sr1_idx, sr2_idx):
+    def SVWS(self, vr1_idx, addrs):
         vr1 = self.RFs['VRF'].Read(vr1_idx)
-        sr1 = self.RFs['SRF'].Read(sr1_idx)
-        sr2 = self.RFs['SRF'].Read(sr2_idx)
-        for i in range(self.instr.len_reg):
-            if self.instr.mask_reg_cpy[i]:
-                self.VDMEM.Write(sr1 + i*sr2, vr1[i])
-    
+        for i, addr in enumerate(addrs):
+            self.VDMEM.Write(addr, vr1[i])
+
     # Instruction 15
-    def LVI(self, vr1_idx, sr1_idx, vr2_idx):
-        sr1 = self.RFs['SRF'].Read(sr1_idx)
-        vr2 = self.RFs['VRF'].Read(vr2_idx)
-        
-        for i in range(self.instr.len_reg):
-            if self.instr.mask_reg_cpy[i]:
-                val = self.VDMEM.Read(sr1 + vr2[i])
-                self.RFs['VRF'].write_vec_element(vr1_idx, i, val)
+    def LVI(self, vr1_idx, addrs):
+        for i, addr in enumerate(addrs):
+            val = self.VDMEM.Read(addr)
+            self.RFs['VRF'].write_vec_element(vr1_idx, i, val)
     
     # Instruction 16
-    def SVI(self, vr1_idx, sr1_idx, vr2_idx):
+    def SVI(self, vr1_idx, addrs):
         vr1 = self.RFs['VRF'].Read(vr1_idx)
-        sr1 = self.RFs['SRF'].Read(sr1_idx)
-        vr2 = self.RFs['VRF'].Read(vr2_idx)
-        
-        # VDMEM[sr1 + vr2[i]] = vr1[i]
-        for i in range(self.instr.len_reg):
-            if self.instr.mask_reg_cpy[i]:
-                self.VDMEM.Write(sr1 + vr2[i], vr1[i])
+        for i, addr in enumerate(addrs):
+            self.VDMEM.Write(addr, vr1[i])
 
     # Instruction 24
     def UNPACKLO(self, vr1_idx, vr2_idx, vr3_idx):

@@ -16,7 +16,8 @@ class IMEM(object):
                                     not (len(ins.strip()) == 0 
                                         or ins.strip().startswith('#'))
                                 ]
-            print("IMEM - Instructions loaded from file:", self.filepath)
+            if (tb==1):
+                print("IMEM - Instructions loaded from file:", self.filepath)
         except Exception as e:
             print("IMEM - ERROR: Couldn't open file in path:", self.filepath)
             print("Exception: ", e)
@@ -42,7 +43,8 @@ class DMEM(object):
         try:
             with open(self.ipfilepath, 'r') as ipf:
                 self.data = [int(line.strip()) for line in ipf.readlines()]
-            print(self.name, "- Data loaded from file:", self.ipfilepath)
+            if (tb==1):
+                print(self.name, "- Data loaded from file:", self.ipfilepath)
             # print(self.name, "- Data:", self.data)
             self.data.extend([0x0 for i in range(self.size - len(self.data))])
         except Exception as e:
@@ -248,114 +250,213 @@ class Core():
             match decoded_instr['instruction']:
                 case "ADDVV":
                     self.___VV(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.VECTOR_OP_TYPE.ADD)
+                    if tb == 1:
+                        print(f"Operation: ADDVV, operand 1: {decoded_instr['operand1']}, operand 2: {decoded_instr['operand2']}, operand 3: {decoded_instr['operand3']}")
                 case "SUBVV":
                     self.___VV(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.VECTOR_OP_TYPE.SUB)
+                    if tb == 1:
+                        print(f"Operation: SUBVV, operand 1: {decoded_instr['operand1']}, operand 2: {decoded_instr['operand2']}, operand 3: {decoded_instr['operand3']}")
                 case "ADDVS":
                     self.___VS(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.VECTOR_OP_TYPE.ADD)
+                    if tb == 1:
+                        print(f"Operation: ADDVS, operand 1: {decoded_instr['operand1']}, operand 2: {decoded_instr['operand2']}, operand 3: {decoded_instr['operand3']}")
                 case "SUBVS":
                     self.___VS(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.VECTOR_OP_TYPE.SUB)
+                    if tb == 1:
+                        print(f"Operation: SUBVS, operand 1: {decoded_instr['operand1']}, operand 2: {decoded_instr['operand2']}, operand 3: {decoded_instr['operand3']}")
                 case "MULVV":
                     self.___VV(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.VECTOR_OP_TYPE.MUL)
+                    if tb == 1:
+                        print(f"Operation: MULVV, operand 1: {decoded_instr['operand1']}, operand 2: {decoded_instr['operand2']}, operand 3: {decoded_instr['operand3']}")
                 case "DIVVV":
                     self.___VV(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.VECTOR_OP_TYPE.DIV)
+                    if tb == 1:
+                        print(f"Operation: DIVVV, operand 1: {decoded_instr['operand1']}, operand 2: {decoded_instr['operand2']}, operand 3: {decoded_instr['operand3']}")
                 case "MULVS":
                     self.___VS(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.VECTOR_OP_TYPE.MUL)
+                    if tb == 1:
+                        print(f"Operation: MULVS, operand 1: {decoded_instr['operand1']}, operand 2: {decoded_instr['operand2']}, operand 3: {decoded_instr['operand3']}")
                 case "DIVVS":
                     self.___VS(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.VECTOR_OP_TYPE.DIV)
+                    if tb == 1:
+                        print(f"Operation: DIVVS, operand 1: {decoded_instr['operand1']}, operand 2: {decoded_instr['operand2']}, operand 3: {decoded_instr['operand3']}")
                 case "SEQVV":
                     self.S__VV(decoded_instr['operand1'], decoded_instr['operand2'], self.BRANCH_TYPE.EQ)
+                    if tb == 1:
+                        print(f"Operation: SEQVV, operands: {decoded_instr['operand1']}, {decoded_instr['operand2']}")
                 case "SNEVV":
                     self.S__VV(decoded_instr['operand1'], decoded_instr['operand2'], self.BRANCH_TYPE.NE)
+                    if tb == 1:
+                        print(f"Operation: SNEVV, operands: {decoded_instr['operand1']}, {decoded_instr['operand2']}")
                 case "SGTVV":
                     self.S__VV(decoded_instr['operand1'], decoded_instr['operand2'], self.BRANCH_TYPE.GT)
+                    if tb == 1:
+                        print(f"Operation: SGTVV, operands: {decoded_instr['operand1']}, {decoded_instr['operand2']}")
                 case "SLTVV":
                     self.S__VV(decoded_instr['operand1'], decoded_instr['operand2'], self.BRANCH_TYPE.LT)
+                    if tb == 1:
+                        print(f"Operation: SLTVV, operands: {decoded_instr['operand1']}, {decoded_instr['operand2']}")
                 case "SGEVV":
                     self.S__VV(decoded_instr['operand1'], decoded_instr['operand2'], self.BRANCH_TYPE.GE)
+                    if tb == 1:
+                        print(f"Operation: SGEVV, operands: {decoded_instr['operand1']}, {decoded_instr['operand2']}")
                 case "SLEVV":
                     self.S__VV(decoded_instr['operand1'], decoded_instr['operand2'], self.BRANCH_TYPE.LE)
+                    if tb == 1:
+                        print(f"Operation: SLEVV, operands: {decoded_instr['operand1']}, {decoded_instr['operand2']}")
                 case "SEQVS":
                     self.S__VS(decoded_instr['operand1'], decoded_instr['operand2'], self.BRANCH_TYPE.EQ)
+                    if tb == 1:
+                        print(f"Operation: SEQVS, operands: {decoded_instr['operand1']}, {decoded_instr['operand2']}")
                 case "SNEVS":
                     self.S__VS(decoded_instr['operand1'], decoded_instr['operand2'], self.BRANCH_TYPE.NE)
+                    if tb == 1:
+                        print(f"Operation: SNEVS, operands: {decoded_instr['operand1']}, {decoded_instr['operand2']}")
                 case "SGTVS":
                     self.S__VS(decoded_instr['operand1'], decoded_instr['operand2'], self.BRANCH_TYPE.GT)
+                    if tb == 1:
+                        print(f"Operation: SGTVS, operands: {decoded_instr['operand1']}, {decoded_instr['operand2']}")
                 case "SLTVS":
                     self.S__VS(decoded_instr['operand1'], decoded_instr['operand2'], self.BRANCH_TYPE.LT)
+                    if tb == 1:
+                        print(f"Operation: SLTVS, operands: {decoded_instr['operand1']}, {decoded_instr['operand2']}")
                 case "SGEVS":
                     self.S__VS(decoded_instr['operand1'], decoded_instr['operand2'], self.BRANCH_TYPE.GE)
+                    if tb == 1:
+                        print(f"Operation: SGEVS, operands: {decoded_instr['operand1']}, {decoded_instr['operand2']}")
                 case "SLEVS":
                     self.S__VS(decoded_instr['operand1'], decoded_instr['operand2'], self.BRANCH_TYPE.LE)
+                    if tb == 1:
+                        print(f"Operation: SLEVS, operands: {decoded_instr['operand1']}, {decoded_instr['operand2']}")
                 case "CVM":
                     self.CVM()
                 case "POP":
                     self.POP(decoded_instr['operand1'])
+                    if tb == 1:
+                        print(f"Operation: POP, operand: {decoded_instr['operand1']}")
                 case "MTCL":
                     self.MTCL(decoded_instr['operand1'])
+                    if tb == 1:
+                        print(f"Operation: MTCL, operand: {decoded_instr['operand1']}")
                 case "MFCL":
                     self.MFCL(decoded_instr['operand1'])
+                    if tb == 1:
+                        print(f"Operation: MFCL, operand: {decoded_instr['operand1']}")
                 case "LV":
                     self.LV(decoded_instr['operand1'], decoded_instr['operand2'])
+                    if tb == 1:
+                        print(f"Operation: LV, operand 1: {decoded_instr['operand1']}, operand 2: {decoded_instr['operand2']}")
                 case "SV":
                     self.SV(decoded_instr['operand1'], decoded_instr['operand2'])
+                    if tb == 1:
+                        print(f"Operation: SV, operand 1: {decoded_instr['operand1']}, operand 2: {decoded_instr['operand2']}")
                 case "LVWS":
                     self.LVWS(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'])
+                    if tb == 1:
+                        print(f"Operation: LVWS, operand 1: {decoded_instr['operand1']}, operand 2: {decoded_instr['operand2']}, operand 3: {decoded_instr['operand3']}")
                 case "SVWS":
                     self.SVWS(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'])
+                    if tb == 1:
+                        print(f"Operation: SVWS, operand 1: {decoded_instr['operand1']}, operand 2: {decoded_instr['operand2']}, operand 3: {decoded_instr['operand3']}")
                 case "LVI":
                     self.LVI(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'])
+                    if tb == 1:
+                        print(f"Operation: LVI, operand 1: {decoded_instr['operand1']}, operand 2: {decoded_instr['operand2']}, operand 3: {decoded_instr['operand3']}")
                 case "SVI":
                     self.SVI(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'])
+                    if tb == 1:
+                        print(f"Operation: SVI, operand 1: {decoded_instr['operand1']}, operand 2: {decoded_instr['operand2']}, operand 3: {decoded_instr['operand3']}")
                 case "LS":
                     self.LS(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'])
+                    if tb == 1:
+                        print(f"Operation: LS, operand 1: {decoded_instr['operand1']}, operand 2: {decoded_instr['operand2']}, operand 3: {decoded_instr['operand3']}")
                 case "SS":
                     self.SS(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'])
+                    if tb == 1:
+                        print(f"Operation: SS, operand 1: {decoded_instr['operand1']}, operand 2: {decoded_instr['operand2']}, operand 3: {decoded_instr['operand3']}")
                 case "ADD":
                     self.scalar_op(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.SCALAR_OP_TYPE.ADD)
+                    if tb == 1:
+                        print(f"Operation: ADD, operand 1: {decoded_instr['operand1']}, operand 2: {decoded_instr['operand2']}, operand 3: {decoded_instr['operand3']}")
                 case "SUB":
                     self.scalar_op(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.SCALAR_OP_TYPE.SUB)
+                    if tb == 1:
+                        print(f"Operation: SUB, operand 1: {decoded_instr['operand1']}, operand 2: {decoded_instr['operand2']}, operand 3: {decoded_instr['operand3']}")
                 case "AND":
                     self.scalar_op(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.SCALAR_OP_TYPE.AND)
+                    if tb == 1:
+                        print(f"Operation: AND, operand 1: {decoded_instr['operand1']}, operand 2: {decoded_instr['operand2']}, operand 3: {decoded_instr['operand3']}")
                 case "OR":
                     self.scalar_op(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.SCALAR_OP_TYPE.OR)
+                    if tb == 1:
+                        print(f"Operation: OR, operand 1: {decoded_instr['operand1']}, operand 2: {decoded_instr['operand2']}, operand 3: {decoded_instr['operand3']}")
                 case "XOR":
                     self.scalar_op(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.SCALAR_OP_TYPE.XOR)
+                    if tb == 1:
+                        print(f"Operation: XOR, operand 1: {decoded_instr['operand1']}, operand 2: {decoded_instr['operand2']}, operand 3: {decoded_instr['operand3']}")
                 case "SLL":
                     self.scalar_op(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.SCALAR_OP_TYPE.SLL)
+                    if tb == 1:
+                        print(f"Operation: SLL, operand 1: {decoded_instr['operand1']}, operand 2: {decoded_instr['operand2']}, operand 3: {decoded_instr['operand3']}")
                 case "SRL":
                     self.scalar_op(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.SCALAR_OP_TYPE.SRL)
+                    if tb == 1:
+                        print(f"Operation: SRL, operand 1: {decoded_instr['operand1']}, operand 2: {decoded_instr['operand2']}, operand 3: {decoded_instr['operand3']}")
                 case "SRA":
                     self.scalar_op(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.SCALAR_OP_TYPE.SRA)
+                    if tb == 1:
+                        print(f"Operation: SRA, operand 1: {decoded_instr['operand1']}, operand 2: {decoded_instr['operand2']}, operand 3: {decoded_instr['operand3']}")
                 case "BEQ":
                     self.branch(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.BRANCH_TYPE.EQ)
+                    if tb == 1:
+                        print(f"Operation: BEQ, operand 1: {decoded_instr['operand1']}, operand 2: {decoded_instr['operand2']}, operand 3: {decoded_instr['operand3']}")
                     continue
                 case "BNE":
                     self.branch(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.BRANCH_TYPE.NE)
+                    if tb == 1:
+                        print(f"Operation: BNE, operand 1: {decoded_instr['operand1']}, operand 2: {decoded_instr['operand2']}, operand 3: {decoded_instr['operand3']}")
                     continue
                 case "BGT":
                     self.branch(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.BRANCH_TYPE.GT)
+                    if tb == 1:
+                        print(f"Operation: BGT, operand 1: {decoded_instr['operand1']}, operand 2: {decoded_instr['operand2']}, operand 3: {decoded_instr['operand3']}")
                     continue
                 case "BLT":
                     self.branch(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.BRANCH_TYPE.LT)
+                    if tb == 1:
+                        print(f"Operation: BLT, operand 1: {decoded_instr['operand1']}, operand 2: {decoded_instr['operand2']}, operand 3: {decoded_instr['operand3']}")
                     continue
                 case "BGE":
                     self.branch(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.BRANCH_TYPE.GE)
+                    if tb == 1:
+                        print(f"Operation: BGE, operand 1: {decoded_instr['operand1']}, operand 2: {decoded_instr['operand2']}, operand 3: {decoded_instr['operand3']}")
                     continue
                 case "BLE":
                     self.branch(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.BRANCH_TYPE.LE)
+                    if tb == 1:
+                        print(f"Operation: BLE, operand 1: {decoded_instr['operand1']}, operand 2: {decoded_instr['operand2']}, operand 3: {decoded_instr['operand3']}")
                     continue
                 case "UNPACKLO":
                     self.UNPACKLO(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'])
+                    if tb == 1:
+                        print(f"Operation: UNPACKLO, operand 1: {decoded_instr['operand1']}, operand 2: {decoded_instr['operand2']}, operand 3: {decoded_instr['operand3']}")
                 case "UNPACKHI":
                     self.UNPACKHI(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'])
+                    if tb == 1:
+                        print(f"Operation: UNPACKHI, operand 1: {decoded_instr['operand1']}, operand 2: {decoded_instr['operand2']}, operand 3: {decoded_instr['operand3']}")
                 case "PACKLO":
                     self.PACKLO(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'])
+                    if tb == 1:
+                        print(f"Operation: PACKLO, operand 1: {decoded_instr['operand1']}, operand 2: {decoded_instr['operand2']}, operand 3: {decoded_instr['operand3']}")
                 case "PACKHI":
                     self.PACKHI(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'])
+                    if tb == 1:
+                        print(f"Operation: PACKHI, operand 1: {decoded_instr['operand1']}, operand 2: {decoded_instr['operand2']}, operand 3: {decoded_instr['operand3']}")
                 case "HALT":
                     break
                 case _:
-                    raise IOError(f'Invalid instruction: {decoded_instr[0]}')
+                    raise IOError(f"Invalid instruction: {decoded_instr['instruction']}")
+
             # update PC
             # skipped for branch instructions
             self.pc += 1
@@ -481,7 +582,7 @@ class Core():
     # Vector Length Register Operations
     # Instruction 9
     def MTCL(self, sr1_idx):
-        self.update_len_reg(self.RFs['SRF'].Read(sr1_idx))
+        self.len_reg=(self.RFs['SRF'].Read(sr1_idx))
         
     # Instruction 10
     def MFCL(self, sr1_idx):
@@ -675,9 +776,12 @@ if __name__ == "__main__":
     # parse arguments for input file location
     parser = argparse.ArgumentParser(description='Vector Core Performance Model')
     parser.add_argument('--iodir', default="", type=str, help='Path to the folder containing the input files - instructions and data.')
+    parser.add_argument('--tb',default="0", type = str, help = 'Set to 1 to include verbose traceback.')
+    
     args = parser.parse_args()
 
     iodir = os.path.abspath(args.iodir)
+    tb = int(args.tb)
     print("IO Directory:", iodir)
 
     # Parse IMEM

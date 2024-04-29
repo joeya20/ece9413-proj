@@ -316,18 +316,19 @@ class ExecPipeline():
             addr_idx = 0
             self.cycles_needed = 0
             vls_pipeline = [None] * self.depth # this tracks the state of the pipeline
-            while addr_idx < len(instr.addr):
-                # if instr.mask_reg_cpy[addr_idx]: # does this work?? (how do we keep track of mask reg)
-                bank_idx = instr.addr[addr_idx] % self.num_banks    # get which bank to access for current addr
-                for stage in vls_pipeline:
-                    # add access to pipeline if there's no conflict
-                    if stage is not None and stage['bank_idx'] != bank_idx:
-                        vls_pipeline.append(
-                            {
-                                'bank_idx': bank_idx
-                            }
-                        )
-                        addr_idx += 1
+            while addr_idx < len(instr.addr) and vls_pipeline.count(None) != len(vls_pipeline):
+                if addr_idx < len(instr.addr):
+                    # if instr.mask_reg_cpy[addr_idx]: # does this work?? (how do we keep track of mask reg)
+                    bank_idx = instr.addr[addr_idx] % self.num_banks    # get which bank to access for current addr
+                    for stage in vls_pipeline:
+                        # add access to pipeline if there's no conflict
+                        if stage is not None and stage['bank_idx'] != bank_idx:
+                            vls_pipeline.append(
+                                {
+                                    'bank_idx': bank_idx
+                                }
+                            )
+                            addr_idx += 1
                 # increment cycles needed and shift pipeline
                 self.cycles_needed += 1
                 vls_pipeline[:-1] = vls_pipeline[1:] + [None]

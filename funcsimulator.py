@@ -367,7 +367,15 @@ class Core():
                     self.LV(decoded_instr['operand1'], decoded_instr['operand2'])
                     if tb == 1:
                         f = open("traceback.txt","a")
-                        f.write(f"LV {decoded_instr['operand1']} {self.RFs['SRF'].Read(decoded_instr['operand2'])}\n")
+                        f.write(f"LV {decoded_instr['operand1']} [")
+                        sr1 = self.RFs['SRF'].Read(decoded_instr['operand2'])
+                        for i in range(self.len_reg):
+                            if self.mask_reg[i]:
+                                val = self.VDMEM.Read(sr1 + i)
+                                f.write(f"{val}, ")
+                            else:
+                                f.write("None, ")
+                        f.write(f"]\n")
                 case "SV":
                     self.SV(decoded_instr['operand1'], decoded_instr['operand2'])
                     if tb == 1:
@@ -377,7 +385,16 @@ class Core():
                     self.LVWS(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'])
                     if tb == 1:
                         f = open("traceback.txt","a")
-                        f.write(f"LVWS {decoded_instr['operand1']} {self.RFs['SRF'].Read(decoded_instr['operand2'])} {self.RFs['SRF'].Read(decoded_instr['operand3'])}\n")
+                        f.write(f"LVWS {decoded_instr['operand1']} ")
+                        sr1 = self.RFs['SRF'].Read(decoded_instr['operand2'])
+                        sr2 = self.RFs['SRF'].Read(decoded_instr['operand3'])
+                        for i in range(self.len_reg):
+                            if self.mask_reg[i]:
+                                val = self.VDMEM.Read(sr1 + i * sr2)
+                                f.write(f"{val}, ")
+                            else:
+                                f.write("None, ")
+                        f.write(f"]\n")
                 case "SVWS":
                     self.SVWS(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'])
                     if tb == 1:
@@ -387,7 +404,17 @@ class Core():
                     self.LVI(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'])
                     if tb == 1:
                         f = open("traceback.txt","a")
-                        f.write(f"LVI {decoded_instr['operand1']} {self.RFs['SRF'].Read(decoded_instr['operand2'])} {self.RFs['VRF'].Read(decoded_instr['operand3'])}\n")
+                        f.write(f"LVI {decoded_instr['operand1']} [")
+                        sr1 = self.RFs['SRF'].Read(decoded_instr['operand2'])
+                        vr2 = self.RFs['VRF'].Read(decoded_instr['operand3'])
+                        
+                        for i in range(self.len_reg):
+                            if self.mask_reg[i]:
+                                val = self.VDMEM.Read(sr1 + vr2[i])
+                                f.write(f"{val}, ")
+                            else:
+                                f.write("None, ")
+                        f.write(f"]\n")
                 case "SVI":
                     self.SVI(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'])
                     if tb == 1:

@@ -237,6 +237,7 @@ class Core():
     
     def run(self):
         i = 0
+        f = open(os.path.join(iodir, "resolved_code.asm"), 'w')
         while (True):
             # fetch instruction
             instr = self.IMEM.Read(self.pc)
@@ -248,291 +249,180 @@ class Core():
             match decoded_instr['instruction']:
                 case "ADDVV":
                     self.___VV(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.VECTOR_OP_TYPE.ADD)
-                    if tb == 1:
-                        f = open("traceback.txt","a")
-                        f.write(f"ADDVV {decoded_instr['operand1']} {decoded_instr['operand2']} {decoded_instr['operand3']}\n")
                 case "SUBVV":
                     self.___VV(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.VECTOR_OP_TYPE.SUB)
-                    if tb == 1:
-                        f = open("traceback.txt","a")
-                        f.write(f"SUBVV {decoded_instr['operand1']} {decoded_instr['operand2']} {decoded_instr['operand3']}\n")
                 case "ADDVS":
                     self.___VS(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.VECTOR_OP_TYPE.ADD)
-                    if tb == 1:
-                        f = open("traceback.txt","a")
-                        f.write(f"ADDVS {decoded_instr['operand1']} {decoded_instr['operand2']} {decoded_instr['operand3']}\n")
                 case "SUBVS":
                     self.___VS(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.VECTOR_OP_TYPE.SUB)
-                    if tb == 1:
-                        f = open("traceback.txt","a")
-                        f.write(f"SUBVS {decoded_instr['operand1']} {decoded_instr['operand2']} {decoded_instr['operand3']}\n")
                 case "MULVV":
                     self.___VV(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.VECTOR_OP_TYPE.MUL)
-                    if tb == 1:
-                        f = open("traceback.txt","a")
-                        f.write(f"MULVV {decoded_instr['operand1']} {decoded_instr['operand2']} {decoded_instr['operand3']}\n")
                 case "DIVVV":
                     self.___VV(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.VECTOR_OP_TYPE.DIV)
-                    if tb == 1:
-                        f = open("traceback.txt","a")
-                        f.write(f"DIVVV {decoded_instr['operand1']} {decoded_instr['operand2']} {decoded_instr['operand3']}\n")
                 case "MULVS":
                     self.___VS(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.VECTOR_OP_TYPE.MUL)
-                    if tb == 1:
-                        f = open("traceback.txt","a")
-                        f.write(f"MULVS {decoded_instr['operand1']} {decoded_instr['operand2']} {decoded_instr['operand3']}")
                 case "DIVVS":
                     self.___VS(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.VECTOR_OP_TYPE.DIV)
-                    if tb == 1:
-                        f = open("traceback.txt","a")
-                        f.write(f"DIVVS {decoded_instr['operand1']} {decoded_instr['operand2']} {decoded_instr['operand3']}\n")
                 case "SEQVV":
                     self.S__VV(decoded_instr['operand1'], decoded_instr['operand2'], self.BRANCH_TYPE.EQ)
-                    if tb == 1:
-                        f = open("traceback.txt","a")
-                        f.write(f"SEQVV, operands: {decoded_instr['operand1']} {decoded_instr['operand2']}\n")
                 case "SNEVV":
                     self.S__VV(decoded_instr['operand1'], decoded_instr['operand2'], self.BRANCH_TYPE.NE)
-                    if tb == 1:
-                        f = open("traceback.txt","a")
-                        f.write(f"SNEVV, operands: {decoded_instr['operand1']} {decoded_instr['operand2']}\n")
                 case "SGTVV":
                     self.S__VV(decoded_instr['operand1'], decoded_instr['operand2'], self.BRANCH_TYPE.GT)
-                    if tb == 1:
-                        f = open("traceback.txt","a")
-                        f.write(f"SGTVV, operands: {decoded_instr['operand1']} {decoded_instr['operand2']}\n")
                 case "SLTVV":
                     self.S__VV(decoded_instr['operand1'], decoded_instr['operand2'], self.BRANCH_TYPE.LT)
-                    if tb == 1:
-                        f = open("traceback.txt","a")
-                        f.write(f"SLTVV, operands: {decoded_instr['operand1']} {decoded_instr['operand2']}\n")
                 case "SGEVV":
                     self.S__VV(decoded_instr['operand1'], decoded_instr['operand2'], self.BRANCH_TYPE.GE)
-                    if tb == 1:
-                        f = open("traceback.txt","a")
-                        f.write(f"SGEVV, operands: {decoded_instr['operand1']} {decoded_instr['operand2']}\n")
                 case "SLEVV":
                     self.S__VV(decoded_instr['operand1'], decoded_instr['operand2'], self.BRANCH_TYPE.LE)
-                    if tb == 1:
-                        f = open("traceback.txt","a")
-                        f.write(f"SLEVV, operands: {decoded_instr['operand1']} {decoded_instr['operand2']}\n")
                 case "SEQVS":
                     self.S__VS(decoded_instr['operand1'], decoded_instr['operand2'], self.BRANCH_TYPE.EQ)
-                    if tb == 1:
-                        f = open("traceback.txt","a")
-                        f.write(f"SEQVS, operands: {decoded_instr['operand1']} {decoded_instr['operand2']}\n")
                 case "SNEVS":
                     self.S__VS(decoded_instr['operand1'], decoded_instr['operand2'], self.BRANCH_TYPE.NE)
-                    if tb == 1:
-                        f = open("traceback.txt","a")
-                        f.write(f"SNEVS, operands: {decoded_instr['operand1']} {decoded_instr['operand2']}\n")
                 case "SGTVS":
                     self.S__VS(decoded_instr['operand1'], decoded_instr['operand2'], self.BRANCH_TYPE.GT)
-                    if tb == 1:
-                        f = open("traceback.txt","a")
-                        f.write(f"SGTVS, operands: {decoded_instr['operand1']} {decoded_instr['operand2']}\n")
                 case "SLTVS":
                     self.S__VS(decoded_instr['operand1'], decoded_instr['operand2'], self.BRANCH_TYPE.LT)
-                    if tb == 1:
-                        f = open("traceback.txt","a")
-                        f.write(f"SLTVS, operands: {decoded_instr['operand1']} {decoded_instr['operand2']}\n")
                 case "SGEVS":
                     self.S__VS(decoded_instr['operand1'], decoded_instr['operand2'], self.BRANCH_TYPE.GE)
-                    if tb == 1:
-                        f = open("traceback.txt","a")
-                        f.write(f"SGEVS, operands: {decoded_instr['operand1']} {decoded_instr['operand2']}\n")
                 case "SLEVS":
                     self.S__VS(decoded_instr['operand1'], decoded_instr['operand2'], self.BRANCH_TYPE.LE)
-                    if tb == 1:
-                        f = open("traceback.txt","a")
-                        f.write(f"SLEVS, operands: {decoded_instr['operand1']} {decoded_instr['operand2']}\n")
                 case "CVM":
                     self.CVM()
                 case "POP":
                     self.POP(decoded_instr['operand1'])
-                    if tb == 1:
-                        f = open("traceback.txt","a")
-                        f.write(f"POP {decoded_instr['operand1']}\n")
                 case "MTCL":
                     self.MTCL(decoded_instr['operand1'])
-                    if tb == 1:
-                        f = open("traceback.txt","a")
-                        f.write(f"MTCL {decoded_instr['operand1']}\n")
                 case "MFCL":
                     self.MFCL(decoded_instr['operand1'])
-                    if tb == 1:
-                        f = open("traceback.txt","a")
-                        f.write(f"MFCL {decoded_instr['operand1']}\n")
                 case "LV":
                     self.LV(decoded_instr['operand1'], decoded_instr['operand2'])
                     if tb == 1:
-                        f = open("traceback.txt","a")
-                        f.write(f"LV {decoded_instr['operand1']} [")
+                        resolved_instr = f"LV {decoded_instr['operand1']}"
+                        addr_list = []
                         sr1 = self.RFs['SRF'].Read(decoded_instr['operand2'])
                         for i in range(self.len_reg):
                             if self.mask_reg[i]:
-                                val = self.VDMEM.Read(sr1 + i)
-                                f.write(f"{val}, ")
-                            else:
-                                f.write("None, ")
-                        f.write(f"]\n")
+                                addr_list.append(sr1 + i)
+                        resolved_instr = resolved_instr + " " + str(addr_list)
+                        f.write(resolved_instr + '\n')
                 case "SV":
                     self.SV(decoded_instr['operand1'], decoded_instr['operand2'])
                     if tb == 1:
-                        f = open("traceback.txt","a")
-                        f.write(f"SV {self.RFs['VRF'].Read(decoded_instr['operand1'])[:self.len_reg]} {self.RFs['SRF'].Read(decoded_instr['operand2'])}\n")
+                        resolved_instr = f"SV {decoded_instr['operand1']}"
+                        addr_list = []
+                        sr1 = self.RFs['SRF'].Read(decoded_instr['operand2'])
+                        for i in range(self.len_reg):
+                            if self.mask_reg[i]:
+                                addr_list.append(sr1 + i)
+                        resolved_instr = resolved_instr + " " + str(addr_list)
+                        f.write(resolved_instr + '\n')
                 case "LVWS":
                     self.LVWS(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'])
                     if tb == 1:
-                        f = open("traceback.txt","a")
-                        f.write(f"LVWS {decoded_instr['operand1']} ")
+                        resolved_instr = f"LVWS {decoded_instr['operand1']}"
+                        addr_list = []
                         sr1 = self.RFs['SRF'].Read(decoded_instr['operand2'])
                         sr2 = self.RFs['SRF'].Read(decoded_instr['operand3'])
                         for i in range(self.len_reg):
                             if self.mask_reg[i]:
-                                val = self.VDMEM.Read(sr1 + i * sr2)
-                                f.write(f"{val}, ")
-                            else:
-                                f.write("None, ")
-                        f.write(f"]\n")
+                                addr_list.append(sr1 + i * sr2)
+                        resolved_instr = resolved_instr + " " + str(addr_list)
+                        f.write(resolved_instr + '\n')
                 case "SVWS":
                     self.SVWS(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'])
                     if tb == 1:
-                        f = open("traceback.txt","a")
-                        f.write(f"SVWS {self.RFs['VRF'].Read(decoded_instr['operand1'])[:self.len_reg]} {self.RFs['SRF'].Read(decoded_instr['operand2'])} {self.RFs['SRF'].Read(decoded_instr['operand3'])}\n")
+                        resolved_instr = f"SVWS {decoded_instr['operand1']}"
+                        addr_list = []
+                        sr1 = self.RFs['SRF'].Read(decoded_instr['operand2'])
+                        sr2 = self.RFs['SRF'].Read(decoded_instr['operand3'])
+                        for i in range(self.len_reg):
+                            if self.mask_reg[i]:
+                                addr_list.append(sr1 + i * sr2)
+                        resolved_instr = resolved_instr + " " + str(addr_list)
+                        f.write(resolved_instr + '\n')
                 case "LVI":
                     self.LVI(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'])
                     if tb == 1:
-                        f = open("traceback.txt","a")
-                        f.write(f"LVI {decoded_instr['operand1']} [")
+                        resolved_instr = f"LVI {decoded_instr['operand1']}"
+                        addr_list = []
                         sr1 = self.RFs['SRF'].Read(decoded_instr['operand2'])
                         vr2 = self.RFs['VRF'].Read(decoded_instr['operand3'])
-                        
                         for i in range(self.len_reg):
                             if self.mask_reg[i]:
-                                val = self.VDMEM.Read(sr1 + vr2[i])
-                                f.write(f"{val}, ")
-                            else:
-                                f.write("None, ")
-                        f.write(f"]\n")
+                                addr_list.append(sr1 + vr2[i])
+                        resolved_instr = resolved_instr + " " + str(addr_list)
+                        f.write(resolved_instr + '\n')
                 case "SVI":
                     self.SVI(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'])
                     if tb == 1:
-                        f = open("traceback.txt","a")
-                        f.write(f"SVI {self.RFs['VRF'].Read(decoded_instr['operand1'])[:self.len_reg]} {self.RFs['SRF'].Read(decoded_instr['operand2'])} {self.RFs['VRF'].Read(decoded_instr['operand3'])}\n")
+                        resolved_instr = f"SVI {decoded_instr['operand1']}"
+                        addr_list = []
+                        sr1 = self.RFs['SRF'].Read(decoded_instr['operand2'])
+                        vr2 = self.RFs['VRF'].Read(decoded_instr['operand3'])
+                        for i in range(self.len_reg):
+                            if self.mask_reg[i]:
+                                addr_list.append(sr1 + vr2[i])
+                        resolved_instr = resolved_instr + " " + str(addr_list)
+                        f.write(resolved_instr + '\n')
                 case "LS":
                     self.LS(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'])
-                    if tb == 1:
-                        f = open("traceback.txt","a")
-                        f.write(f"LS {decoded_instr['operand1']} {decoded_instr['operand2']} {decoded_instr['operand3']}\n")
                 case "SS":
                     self.SS(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'])
-                    if tb == 1:
-                        f = open("traceback.txt","a")
-                        f.write(f"SS {decoded_instr['operand1']} {decoded_instr['operand2']} {decoded_instr['operand3']}\n")
                 case "ADD":
                     self.scalar_op(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.SCALAR_OP_TYPE.ADD)
-                    if tb == 1:
-                        f = open("traceback.txt","a")
-                        f.write(f"ADD {decoded_instr['operand1']} {decoded_instr['operand2']} {decoded_instr['operand3']}\n")
                 case "SUB":
                     self.scalar_op(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.SCALAR_OP_TYPE.SUB)
-                    if tb == 1:
-                        f = open("traceback.txt","a")
-                        f.write(f"SUB {decoded_instr['operand1']} {decoded_instr['operand2']} {decoded_instr['operand3']}\n")
                 case "AND":
                     self.scalar_op(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.SCALAR_OP_TYPE.AND)
-                    if tb == 1:
-                        f = open("traceback.txt","a")
-                        f.write(f"AND {decoded_instr['operand1']} {decoded_instr['operand2']} {decoded_instr['operand3']}\n")
                 case "OR":
                     self.scalar_op(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.SCALAR_OP_TYPE.OR)
-                    if tb == 1:
-                        f = open("traceback.txt","a")
-                        f.write(f"OR {decoded_instr['operand1']} {decoded_instr['operand2']} {decoded_instr['operand3']}\n")
                 case "XOR":
                     self.scalar_op(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.SCALAR_OP_TYPE.XOR)
-                    if tb == 1:
-                        f = open("traceback.txt","a")
-                        f.write(f"XOR {decoded_instr['operand1']} {decoded_instr['operand2']} {decoded_instr['operand3']}\n")
                 case "SLL":
                     self.scalar_op(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.SCALAR_OP_TYPE.SLL)
-                    if tb == 1:
-                        f = open("traceback.txt","a")
-                        f.write(f"SLL {decoded_instr['operand1']} {decoded_instr['operand2']} {decoded_instr['operand3']}\n")
                 case "SRL":
                     self.scalar_op(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.SCALAR_OP_TYPE.SRL)
-                    if tb == 1:
-                        f = open("traceback.txt","a")
-                        f.write(f"SRL {decoded_instr['operand1']} {decoded_instr['operand2']} {decoded_instr['operand3']}\n")
                 case "SRA":
                     self.scalar_op(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.SCALAR_OP_TYPE.SRA)
-                    if tb == 1:
-                        f = open("traceback.txt","a")
-                        f.write(f"SRA {decoded_instr['operand1']} {decoded_instr['operand2']} {decoded_instr['operand3']}\n")
                 case "BEQ":
                     self.branch(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.BRANCH_TYPE.EQ)
-                    if tb == 1:
-                        f = open("traceback.txt","a")
-                        f.write(f"BEQ {decoded_instr['operand1']} {decoded_instr['operand2']} {decoded_instr['operand3']}\n")
                     continue
                 case "BNE":
                     self.branch(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.BRANCH_TYPE.NE)
-                    if tb == 1:
-                        f = open("traceback.txt","a")
-                        f.write(f"BNE {decoded_instr['operand1']} {decoded_instr['operand2']} {decoded_instr['operand3']}\n")
                     continue
                 case "BGT":
                     self.branch(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.BRANCH_TYPE.GT)
-                    if tb == 1:
-                        f = open("traceback.txt","a")
-                        f.write(f"BGT {decoded_instr['operand1']} {decoded_instr['operand2']} {decoded_instr['operand3']}\n")
                     continue
                 case "BLT":
                     self.branch(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.BRANCH_TYPE.LT)
-                    if tb == 1:
-                        f = open("traceback.txt","a")
-                        f.write(f"BLT {decoded_instr['operand1']} {decoded_instr['operand2']} {decoded_instr['operand3']}\n")
                     continue
                 case "BGE":
                     self.branch(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.BRANCH_TYPE.GE)
-                    if tb == 1:
-                        f = open("traceback.txt","a")
-                        f.write(f"BGE {decoded_instr['operand1']} {decoded_instr['operand2']} {decoded_instr['operand3']}\n")
                     continue
                 case "BLE":
                     self.branch(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'], self.BRANCH_TYPE.LE)
-                    if tb == 1:
-                        f = open("traceback.txt","a")
-                        f.write(f"BLE {decoded_instr['operand1']} {decoded_instr['operand2']} {decoded_instr['operand3']}\n")
                     continue
                 case "UNPACKLO":
                     self.UNPACKLO(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'])
-                    if tb == 1:
-                        f = open("traceback.txt","a")
-                        f.write(f"UNPACKLO {decoded_instr['operand1']} {decoded_instr['operand2']} {decoded_instr['operand3']}\n")
                 case "UNPACKHI":
                     self.UNPACKHI(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'])
-                    if tb == 1:
-                        f = open("traceback.txt","a")
-                        f.write(f"UNPACKHI {decoded_instr['operand1']} {decoded_instr['operand2']} {decoded_instr['operand3']}\n")
                 case "PACKLO":
                     self.PACKLO(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'])
-                    if tb == 1:
-                        f = open("traceback.txt","a")
-                        f.write(f"PACKLO {decoded_instr['operand1']} {decoded_instr['operand2']} {decoded_instr['operand3']}\n")
                 case "PACKHI":
                     self.PACKHI(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'])
-                    if tb == 1:
-                        f = open("traceback.txt","a")
-                        f.write(f"PACKHI {decoded_instr['operand1']} {decoded_instr['operand2']} {decoded_instr['operand3']}\n")
                 case "HALT":
+                    f.write(instr + '\n')
                     break
                 case _:
                     raise IOError(f"Invalid instruction: {decoded_instr['instruction']}")
             # update PC
             # skipped for branch instructions
+            if tb == 1 and decoded_instr['instruction'] not in ['LV', 'SV', 'LVI', 'SVI', 'LVWS', 'SVWS']:
+                f.write(instr + '\n')
+            
             self.pc += 1
+        f.close()
 
     def dumpregs(self, iodir):
         for rf in self.RFs.values():
@@ -849,14 +739,12 @@ if __name__ == "__main__":
     # parse arguments for input file location
     parser = argparse.ArgumentParser(description='Vector Core Performance Model')
     parser.add_argument('--iodir', default="", type=str, help='Path to the folder containing the input files - instructions and data.')
-    parser.add_argument('--tb',default="0", type = str, help = 'Set to 1 to include verbose traceback.')
+    parser.add_argument('--tb',default="0", type=str, help='Set to 1 to include verbose traceback.')
     
     args = parser.parse_args()
 
     iodir = os.path.abspath(args.iodir)
     tb = int(args.tb)
-    f = open("traceback.txt","w")
-    f.write("")
     print("IO Directory:", iodir)
 
     # Parse IMEM

@@ -1,0 +1,890 @@
+IO Directory: /home/joey/ece9413-proj/tests/simple
+Config - Parameters loaded from file: /home/joey/ece9413-proj/tests/simple/Config.txt
+Config parameters: {'dataQueueDepth': '4', 'computeQueueDepth': '4', 'vdmNumBanks': '4', 'vlsPipelineDepth': '11', 'numLanes': '4', 'pipelineDepthMul': '12', 'pipelineDepthAdd': '2', 'pipelineDepthDiv': '8', 'pipelineDepthShuffle': '5'}
+IMEM - Instructions loaded from file: /home/joey/ece9413-proj/tests/simple/Code.asm
+SDMEM - Data loaded from file: /home/joey/ece9413-proj/tests/simple/SDMEM.txt
+VDMEM - Data loaded from file: /home/joey/ece9413-proj/tests/simple/VDMEM.txt
+cycle 1 - running instr 0: LV VR0 (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63)
+[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]
+cycle 2 - running instr 1: LV VR1 (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63)
+LSI instruction: LV
+[None, None, None, None, None, None, None, None, None, None, {'bank_idx': 0}]
+[None, None, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}]
+[None, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}]
+[None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}]
+[None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None]
+[None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None]
+[None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None]
+[None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None]
+[None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None]
+[None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None]
+[{'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None]
+[{'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}]
+[{'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}]
+[{'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}]
+[None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}]
+[None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None]
+[None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None]
+[None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None]
+[None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None]
+[None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None]
+[None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None]
+[{'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None]
+[{'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}]
+[{'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}]
+[{'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}]
+[None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}]
+[None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None]
+[None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None]
+[None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None]
+[None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None]
+[None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None]
+[None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None]
+[{'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None]
+[{'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}]
+[{'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}]
+[{'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}]
+[None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}]
+[None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None]
+[None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None]
+[None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None]
+[None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None]
+[None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None]
+[None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None]
+[{'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None]
+[{'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}]
+[{'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}]
+[{'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}]
+[None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}]
+[None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None]
+[None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None]
+[None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None]
+[None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None]
+[None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None]
+[None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None]
+[{'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None]
+[{'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}]
+[{'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}]
+[{'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}]
+[None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}]
+[None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None]
+[None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None]
+[None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None]
+[None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None]
+[None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None]
+[None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None]
+[{'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None]
+[{'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}]
+[{'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}]
+[{'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}]
+[None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}]
+[None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None]
+[None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None]
+[None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None]
+[None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None]
+[None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None]
+[None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None]
+[{'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None]
+[{'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}]
+[{'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}]
+[{'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}]
+[None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}]
+[None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None]
+[None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None]
+[None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None]
+[None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None]
+[None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None]
+[None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None]
+[{'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None]
+[{'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}]
+[{'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}]
+[{'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}]
+[None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}]
+[None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None]
+[None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None]
+[None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None]
+[None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None]
+[None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None]
+[None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None]
+[{'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None]
+[{'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}]
+[{'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}]
+[{'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}]
+[None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}]
+[None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None]
+[None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None]
+[None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None]
+[None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None]
+[None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None]
+[None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None]
+[{'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None]
+[{'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}]
+[{'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}]
+[{'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}]
+[None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}]
+[None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None]
+[None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None]
+[None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None]
+[None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None]
+[None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None]
+[None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None]
+[{'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None]
+[{'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}]
+[{'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}]
+[{'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}]
+[None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}]
+[None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None]
+[None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None]
+[None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None]
+[None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None]
+[None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None]
+[None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None]
+[{'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None]
+[{'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}]
+[{'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}]
+[{'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}]
+[None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}]
+[None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None]
+[None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None]
+[None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None]
+[None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None]
+[None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None]
+[None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None]
+[{'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None]
+[{'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}]
+[{'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}]
+[{'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}]
+[None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}]
+[None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None]
+[None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None]
+[None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None]
+[None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None]
+[None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None]
+[None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None]
+[{'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None]
+[{'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}]
+[{'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}]
+[{'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}]
+[None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}]
+[None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None]
+[None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None]
+[None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None]
+[None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None]
+[None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None]
+[None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None]
+[{'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None]
+[{'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}]
+[{'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}]
+[{'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}]
+[None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}]
+[None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None]
+[None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None]
+[None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None]
+[None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None]
+[None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None]
+[None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None]
+[{'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None]
+[{'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, None]
+[{'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, None, None]
+[{'bank_idx': 3}, None, None, None, None, None, None, None, None, None, None]
+[None, None, None, None, None, None, None, None, None, None, None]
+cycles needed: 179
+[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]
+cycle 3 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 4 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 5 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 6 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 7 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 8 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 9 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 10 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 11 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 12 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 13 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 14 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 15 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 16 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 17 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 18 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 19 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 20 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 21 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 22 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 23 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 24 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 25 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 26 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 27 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 28 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 29 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 30 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 31 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 32 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 33 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 34 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 35 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 36 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 37 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 38 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 39 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 40 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 41 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 42 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 43 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 44 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 45 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 46 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 47 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 48 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 49 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 50 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 51 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 52 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 53 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 54 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 55 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 56 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 57 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 58 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 59 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 60 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 61 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 62 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 63 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 64 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 65 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 66 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 67 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 68 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 69 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 70 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 71 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 72 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 73 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 74 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 75 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 76 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 77 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 78 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 79 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 80 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 81 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 82 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 83 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 84 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 85 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 86 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 87 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 88 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 89 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 90 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 91 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 92 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 93 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 94 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 95 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 96 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 97 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 98 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 99 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 100 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 101 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 102 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 103 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 104 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 105 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 106 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 107 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 108 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 109 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 110 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 111 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 112 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 113 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 114 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 115 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 116 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 117 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 118 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 119 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 120 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 121 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 122 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 123 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 124 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 125 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 126 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 127 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 128 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 129 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 130 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 131 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 132 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 133 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 134 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 135 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 136 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 137 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 138 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 139 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 140 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 141 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 142 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 143 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 144 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 145 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 146 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 147 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 148 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 149 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 150 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 151 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 152 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 153 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 154 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 155 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 156 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 157 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 158 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 159 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 160 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 161 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 162 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 163 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 164 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 165 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 166 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 167 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 168 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 169 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 170 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 171 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 172 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 173 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 174 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 175 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 176 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 177 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 178 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 179 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 180 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 181 - running instr 2: ADDVV VR2 VR0 VR1
+LSI instruction: LV
+[None, None, None, None, None, None, None, None, None, None, {'bank_idx': 0}]
+[None, None, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}]
+[None, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}]
+[None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}]
+[None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None]
+[None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None]
+[None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None]
+[None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None]
+[None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None]
+[None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None]
+[{'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None]
+[{'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}]
+[{'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}]
+[{'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}]
+[None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}]
+[None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None]
+[None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None]
+[None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None]
+[None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None]
+[None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None]
+[None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None]
+[{'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None]
+[{'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}]
+[{'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}]
+[{'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}]
+[None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}]
+[None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None]
+[None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None]
+[None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None]
+[None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None]
+[None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None]
+[None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None]
+[{'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None]
+[{'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}]
+[{'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}]
+[{'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}]
+[None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}]
+[None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None]
+[None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None]
+[None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None]
+[None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None]
+[None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None]
+[None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None]
+[{'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None]
+[{'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}]
+[{'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}]
+[{'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}]
+[None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}]
+[None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None]
+[None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None]
+[None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None]
+[None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None]
+[None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None]
+[None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None]
+[{'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None]
+[{'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}]
+[{'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}]
+[{'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}]
+[None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}]
+[None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None]
+[None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None]
+[None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None]
+[None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None]
+[None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None]
+[None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None]
+[{'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None]
+[{'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}]
+[{'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}]
+[{'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}]
+[None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}]
+[None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None]
+[None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None]
+[None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None]
+[None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None]
+[None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None]
+[None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None]
+[{'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None]
+[{'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}]
+[{'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}]
+[{'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}]
+[None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}]
+[None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None]
+[None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None]
+[None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None]
+[None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None]
+[None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None]
+[None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None]
+[{'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None]
+[{'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}]
+[{'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}]
+[{'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}]
+[None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}]
+[None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None]
+[None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None]
+[None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None]
+[None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None]
+[None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None]
+[None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None]
+[{'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None]
+[{'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}]
+[{'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}]
+[{'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}]
+[None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}]
+[None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None]
+[None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None]
+[None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None]
+[None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None]
+[None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None]
+[None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None]
+[{'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None]
+[{'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}]
+[{'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}]
+[{'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}]
+[None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}]
+[None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None]
+[None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None]
+[None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None]
+[None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None]
+[None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None]
+[None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None]
+[{'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None]
+[{'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}]
+[{'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}]
+[{'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}]
+[None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}]
+[None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None]
+[None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None]
+[None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None]
+[None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None]
+[None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None]
+[None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None]
+[{'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None]
+[{'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}]
+[{'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}]
+[{'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}]
+[None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}]
+[None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None]
+[None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None]
+[None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None]
+[None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None]
+[None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None]
+[None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None]
+[{'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None]
+[{'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}]
+[{'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}]
+[{'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}]
+[None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}]
+[None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None]
+[None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None]
+[None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None]
+[None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None]
+[None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None]
+[None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None]
+[{'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None]
+[{'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}]
+[{'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}]
+[{'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}]
+[None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}]
+[None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None]
+[None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None]
+[None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None]
+[None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None]
+[None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None]
+[None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None]
+[{'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None]
+[{'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}]
+[{'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}]
+[{'bank_idx': 3}, None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}]
+[None, None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}]
+[None, None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None]
+[None, None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None]
+[None, None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None]
+[None, None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None]
+[None, None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None]
+[None, {'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None]
+[{'bank_idx': 0}, {'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None]
+[{'bank_idx': 1}, {'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, None]
+[{'bank_idx': 2}, {'bank_idx': 3}, None, None, None, None, None, None, None, None, None]
+[{'bank_idx': 3}, None, None, None, None, None, None, None, None, None, None]
+[None, None, None, None, None, None, None, None, None, None, None]
+cycles needed: 179
+cycle 182 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 183 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 184 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 185 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 186 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 187 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 188 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 189 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 190 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 191 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 192 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 193 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 194 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 195 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 196 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 197 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 198 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 199 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 200 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 201 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 202 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 203 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 204 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 205 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 206 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 207 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 208 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 209 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 210 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 211 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 212 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 213 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 214 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 215 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 216 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 217 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 218 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 219 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 220 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 221 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 222 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 223 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 224 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 225 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 226 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 227 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 228 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 229 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 230 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 231 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 232 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 233 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 234 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 235 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 236 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 237 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 238 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 239 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 240 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 241 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 242 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 243 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 244 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 245 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 246 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 247 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 248 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 249 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 250 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 251 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 252 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 253 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 254 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 255 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 256 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 257 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 258 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 259 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 260 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 261 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 262 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 263 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 264 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 265 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 266 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 267 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 268 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 269 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 270 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 271 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 272 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 273 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 274 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 275 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 276 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 277 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 278 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 279 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 280 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 281 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 282 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 283 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 284 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 285 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 286 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 287 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 288 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 289 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 290 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 291 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 292 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 293 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 294 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 295 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 296 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 297 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 298 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 299 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 300 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 301 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 302 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 303 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 304 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 305 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 306 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 307 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 308 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 309 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 310 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 311 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 312 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 313 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 314 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 315 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 316 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 317 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 318 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 319 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 320 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 321 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 322 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 323 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 324 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 325 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 326 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 327 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 328 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 329 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 330 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 331 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 332 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 333 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 334 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 335 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 336 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 337 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 338 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 339 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 340 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 341 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 342 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 343 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 344 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 345 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 346 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 347 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 348 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 349 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 350 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 351 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 352 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 353 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 354 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 355 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 356 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 357 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 358 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 359 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 360 - running instr 2: ADDVV VR2 VR0 VR1
+cycle 361 - running instr 3: SUBVV VR3 VR0 VR1
+CI instruction: ADDVV
+operations needed: 64
+interations needed: 16
+cycles needed: 17
+cycle 362 - running instr 3: SUBVV VR3 VR0 VR1
+cycle 363 - running instr 3: SUBVV VR3 VR0 VR1
+cycle 364 - running instr 3: SUBVV VR3 VR0 VR1
+cycle 365 - running instr 3: SUBVV VR3 VR0 VR1
+cycle 366 - running instr 3: SUBVV VR3 VR0 VR1
+cycle 367 - running instr 3: SUBVV VR3 VR0 VR1
+cycle 368 - running instr 3: SUBVV VR3 VR0 VR1
+cycle 369 - running instr 3: SUBVV VR3 VR0 VR1
+cycle 370 - running instr 3: SUBVV VR3 VR0 VR1
+cycle 371 - running instr 3: SUBVV VR3 VR0 VR1
+cycle 372 - running instr 3: SUBVV VR3 VR0 VR1
+cycle 373 - running instr 3: SUBVV VR3 VR0 VR1
+cycle 374 - running instr 3: SUBVV VR3 VR0 VR1
+cycle 375 - running instr 3: SUBVV VR3 VR0 VR1
+cycle 376 - running instr 3: SUBVV VR3 VR0 VR1
+cycle 377 - running instr 3: SUBVV VR3 VR0 VR1
+cycle 378 - running instr 3: SUBVV VR3 VR0 VR1
+cycle 379 - running instr 4: MULVV VR4 VR0 VR1
+CI instruction: SUBVV
+operations needed: 64
+interations needed: 16
+cycles needed: 17
+cycle 380 - running instr 4: MULVV VR4 VR0 VR1
+cycle 381 - running instr 4: MULVV VR4 VR0 VR1
+cycle 382 - running instr 4: MULVV VR4 VR0 VR1
+cycle 383 - running instr 4: MULVV VR4 VR0 VR1
+cycle 384 - running instr 4: MULVV VR4 VR0 VR1
+cycle 385 - running instr 4: MULVV VR4 VR0 VR1
+cycle 386 - running instr 4: MULVV VR4 VR0 VR1
+cycle 387 - running instr 4: MULVV VR4 VR0 VR1
+cycle 388 - running instr 4: MULVV VR4 VR0 VR1
+cycle 389 - running instr 4: MULVV VR4 VR0 VR1
+cycle 390 - running instr 4: MULVV VR4 VR0 VR1
+cycle 391 - running instr 4: MULVV VR4 VR0 VR1
+cycle 392 - running instr 4: MULVV VR4 VR0 VR1
+cycle 393 - running instr 4: MULVV VR4 VR0 VR1
+cycle 394 - running instr 4: MULVV VR4 VR0 VR1
+cycle 395 - running instr 4: MULVV VR4 VR0 VR1
+cycle 396 - running instr 4: MULVV VR4 VR0 VR1
+cycle 397 - running instr 5: DIVVV VR5 VR0 VR1
+CI instruction: MULVV
+operations needed: 64
+interations needed: 16
+cycles needed: 27
+cycle 398 - running instr 5: DIVVV VR5 VR0 VR1
+cycle 399 - running instr 5: DIVVV VR5 VR0 VR1
+cycle 400 - running instr 5: DIVVV VR5 VR0 VR1
+cycle 401 - running instr 5: DIVVV VR5 VR0 VR1
+cycle 402 - running instr 5: DIVVV VR5 VR0 VR1
+cycle 403 - running instr 5: DIVVV VR5 VR0 VR1
+cycle 404 - running instr 5: DIVVV VR5 VR0 VR1
+cycle 405 - running instr 5: DIVVV VR5 VR0 VR1
+cycle 406 - running instr 5: DIVVV VR5 VR0 VR1
+cycle 407 - running instr 5: DIVVV VR5 VR0 VR1
+cycle 408 - running instr 5: DIVVV VR5 VR0 VR1
+cycle 409 - running instr 5: DIVVV VR5 VR0 VR1
+cycle 410 - running instr 5: DIVVV VR5 VR0 VR1
+cycle 411 - running instr 5: DIVVV VR5 VR0 VR1
+cycle 412 - running instr 5: DIVVV VR5 VR0 VR1
+cycle 413 - running instr 5: DIVVV VR5 VR0 VR1
+cycle 414 - running instr 5: DIVVV VR5 VR0 VR1
+cycle 415 - running instr 5: DIVVV VR5 VR0 VR1
+cycle 416 - running instr 5: DIVVV VR5 VR0 VR1
+cycle 417 - running instr 5: DIVVV VR5 VR0 VR1
+cycle 418 - running instr 5: DIVVV VR5 VR0 VR1
+cycle 419 - running instr 5: DIVVV VR5 VR0 VR1
+cycle 420 - running instr 5: DIVVV VR5 VR0 VR1
+cycle 421 - running instr 5: DIVVV VR5 VR0 VR1
+cycle 422 - running instr 5: DIVVV VR5 VR0 VR1
+cycle 423 - running instr 5: DIVVV VR5 VR0 VR1
+cycle 424 - running instr 5: DIVVV VR5 VR0 VR1
+cycle 425 - running instr 6: UNPACKLO VR6 VR0 VR1
+CI instruction: DIVVV
+operations needed: 64
+interations needed: 16
+cycles needed: 23
+cycle 426 - running instr 6: UNPACKLO VR6 VR0 VR1
+cycle 427 - running instr 6: UNPACKLO VR6 VR0 VR1
+cycle 428 - running instr 6: UNPACKLO VR6 VR0 VR1
+cycle 429 - running instr 6: UNPACKLO VR6 VR0 VR1
+cycle 430 - running instr 6: UNPACKLO VR6 VR0 VR1
+cycle 431 - running instr 6: UNPACKLO VR6 VR0 VR1
+cycle 432 - running instr 6: UNPACKLO VR6 VR0 VR1
+cycle 433 - running instr 6: UNPACKLO VR6 VR0 VR1
+cycle 434 - running instr 6: UNPACKLO VR6 VR0 VR1
+cycle 435 - running instr 6: UNPACKLO VR6 VR0 VR1
+cycle 436 - running instr 6: UNPACKLO VR6 VR0 VR1
+cycle 437 - running instr 6: UNPACKLO VR6 VR0 VR1
+cycle 438 - running instr 6: UNPACKLO VR6 VR0 VR1
+cycle 439 - running instr 6: UNPACKLO VR6 VR0 VR1
+cycle 440 - running instr 6: UNPACKLO VR6 VR0 VR1
+cycle 441 - running instr 6: UNPACKLO VR6 VR0 VR1
+cycle 442 - running instr 6: UNPACKLO VR6 VR0 VR1
+cycle 443 - running instr 6: UNPACKLO VR6 VR0 VR1
+cycle 444 - running instr 6: UNPACKLO VR6 VR0 VR1
+cycle 445 - running instr 6: UNPACKLO VR6 VR0 VR1
+cycle 446 - running instr 6: UNPACKLO VR6 VR0 VR1
+cycle 447 - running instr 6: UNPACKLO VR6 VR0 VR1
+cycle 448 - running instr 6: UNPACKLO VR6 VR0 VR1
+cycle 449 - running instr 7: PACKLO VR7 VR0 VR1
+CI instruction: UNPACKLO
+operations needed: 64
+interations needed: 16
+cycles needed: 20
+cycle 450 - running instr 7: PACKLO VR7 VR0 VR1
+cycle 451 - running instr 7: PACKLO VR7 VR0 VR1
+cycle 452 - running instr 7: PACKLO VR7 VR0 VR1
+cycle 453 - running instr 7: PACKLO VR7 VR0 VR1
+cycle 454 - running instr 7: PACKLO VR7 VR0 VR1
+cycle 455 - running instr 7: PACKLO VR7 VR0 VR1
+cycle 456 - running instr 7: PACKLO VR7 VR0 VR1
+cycle 457 - running instr 7: PACKLO VR7 VR0 VR1
+cycle 458 - running instr 7: PACKLO VR7 VR0 VR1
+cycle 459 - running instr 7: PACKLO VR7 VR0 VR1
+cycle 460 - running instr 7: PACKLO VR7 VR0 VR1
+cycle 461 - running instr 7: PACKLO VR7 VR0 VR1
+cycle 462 - running instr 7: PACKLO VR7 VR0 VR1
+cycle 463 - running instr 7: PACKLO VR7 VR0 VR1
+cycle 464 - running instr 7: PACKLO VR7 VR0 VR1
+cycle 465 - running instr 7: PACKLO VR7 VR0 VR1
+cycle 466 - running instr 7: PACKLO VR7 VR0 VR1
+cycle 467 - running instr 7: PACKLO VR7 VR0 VR1
+cycle 468 - running instr 7: PACKLO VR7 VR0 VR1
+cycle 469 - running instr 7: PACKLO VR7 VR0 VR1
+cycle 470 - running instr 8: HALT
+CI instruction: PACKLO
+operations needed: 64
+interations needed: 16
+cycles needed: 20
+cycle 471 - running instr 8: HALT
+cycle 472 - running instr 8: HALT
+cycle 473 - running instr 8: HALT
+cycle 474 - running instr 8: HALT
+cycle 475 - running instr 8: HALT
+cycle 476 - running instr 8: HALT
+cycle 477 - running instr 8: HALT
+cycle 478 - running instr 8: HALT
+cycle 479 - running instr 8: HALT
+cycle 480 - running instr 8: HALT
+cycle 481 - running instr 8: HALT
+cycle 482 - running instr 8: HALT
+cycle 483 - running instr 8: HALT
+cycle 484 - running instr 8: HALT
+cycle 485 - running instr 8: HALT
+cycle 486 - running instr 8: HALT
+cycle 487 - running instr 8: HALT
+cycle 488 - running instr 8: HALT
+cycle 489 - running instr 8: HALT
+cycle 490 - running instr 8: HALT
+SRF - Dumped data into output file in path: /home/joey/ece9413-proj/tests/simple/SRF.txt
+VRF - Dumped data into output file in path: /home/joey/ece9413-proj/tests/simple/VRF.txt
+SDMEM - Dumped data into output file in path: /home/joey/ece9413-proj/tests/simple/SDMEMOP.txt
+VDMEM - Dumped data into output file in path: /home/joey/ece9413-proj/tests/simple/VDMEMOP.txt

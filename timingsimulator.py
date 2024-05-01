@@ -1,3 +1,4 @@
+import json
 import os
 import argparse
 from enum import IntEnum
@@ -92,7 +93,7 @@ class Instruction():
 class Decoder():
     '''TODO: add support for new LSI instruction format and compute num_operations'''
     def __init__(self, SRF) -> None:
-        self.re_pattern = re.compile(r"(?:^(?P<instruction>\w+)(?:[ ]+(?P<operand1>\w+))?(?:[ ]+(?P<operand2>\w+))?(?:[ ]+(?P<operand3>[-\w]+))?[ ]*(?P<inline_comment>#.*)?$)|(?:^(?P<comment_line>[ ]*?#.*)$)|(?P<empty_line>^(?<!.)$|(?:^[ ]+$)$)")
+        self.re_pattern = re.compile(r"(?:^(?P<instruction>\w+)(?:[ ]+(?P<operand1>\w+))?(?:[ ]+(?P<operand2>\w+))?(?:[ ]+(?P<operand3>[-\w]+))?(?:[ ]+(?P<addr_list>\[[0-9,\s]+\]))?[ ]*(?P<inline_comment>#.*)?$)|(?:^(?P<comment_line>[ ]*?#.*)$)|(?P<empty_line>^(?<!.)$|(?:^[ ]+$)$)")
         self.SRF = SRF
 
     def decode(self, instr_str, len_reg, mask_reg):
@@ -179,8 +180,22 @@ class Decoder():
             instr.type = 'LSI'
             instr.pipeline_needed = 'Vls'
             instr.operand1 = instr_dict['operand1']
-            instr.addr = None # TODO
+            instr.regs = [VREGS[instr_dict['operand1']]]
+            instr.addr = list(json.loads(instr_dict['addr_list']))
 
+            # if instr.op in ['LV', 'SV']:
+            #     instr.operand1 = instr_dict['operand1']
+            #     instr.regs = [VREGS[instr_dict['operand1']]]
+            #     instr.addr = [i for i in range(int(instr_dict['operand2']), instr.len_reg)]
+            # elif instr.op in ['LVWS', 'SVWS']:
+            #     instr.operand1 = instr_dict['operand1']
+            #     instr.regs = [VREGS[instr_dict['operand1']]]
+            #     instr.addr = [i for i in range(int(instr_dict['operand2']), instr.len_reg, int(instr_dict['operand3']))]
+            # else: # LVI, SVI
+            #     instr.operand1 = instr_dict['operand1']
+            #     instr.regs = [VREGS[instr_dict['operand1']], VREGS[instr_dict['operand3']]]
+            #     scalar_offset = self.SRF.Read(instr_dict['operand2'])
+            #     instr.addr = [scalar_offset+i for i in range(int(instr_dict['operand2']), instr.len_reg, int(instr_dict['operand3']))]
         return instr
 
 
@@ -228,8 +243,9 @@ class BusyBoard():
         ''' sets the busy bit for the registers in regs
         throws exception if already busy
         '''
-        for reg in regs:
+        for reg in set(regs):
             if self.board[reg.value]:
+                # print(self.board)
                 raise ValueError(f'register {reg.name} already busy')
             self.board[reg.value] = True
 
@@ -237,7 +253,7 @@ class BusyBoard():
         ''' clears the busy bit for the registers in regs
         throws exception if already free
         '''
-        for reg in regs:
+        for reg in set(regs):
             if not self.board[reg.value]:
                 raise ValueError(f'register {reg.name} already free')
             self.board[reg.value] = False
@@ -252,8 +268,8 @@ class BusyBoard():
 
 class IMEM():
     def __init__(self, iodir):
-        self.size = pow(2, 16) # Can hold a maximum of 2^16 instructions.
-        self.filepath = os.path.abspath(os.path.join(iodir, "Code.asm"))
+        self.size = pow(2, 20) # Can hold a maximum of 2^16 instructions.
+        self.filepath = os.path.abspath(os.path.join(iodir, "resolved_code.asm"))
         self.instructions = []
 
         try:
@@ -269,7 +285,7 @@ class IMEM():
     def Read(self, idx): # Use this to read from IMEM.
         if idx >= 0 and idx < self.size:
             return self.instructions[idx]
-        print("IMEM - ERROR: Invalid memory access at index: ", idx, " with memory size: ", self.size)
+        # print("IMEM - ERROR: Invalid memory access at index: ", idx, " with memory size: ", self.size)
 
 
 # ************************ Backend *******************************
@@ -285,13 +301,14 @@ class ExecPipeline():
         self.num_lanes = int(num_lanes)
         # for Vls
         self.VDMEM = VDMEM
-        self.num_banks = num_banks
+        self.num_banks = None if num_banks is None else int(num_banks)
 
     def update(self):
-        self.cycles_needed -= 1
-        if self.cycles_needed == 0:
-            self.finishedInstr()
-            return self.instr
+        if self.busy:
+            self.cycles_needed -= 1
+            if self.cycles_needed <= 0:
+                self.finishedInstr()
+                return self.instr
         return None
 
     def isBusy(self):
@@ -301,38 +318,47 @@ class ExecPipeline():
         self.busy = True
         self.instr = instr
         if self.instr.type == 'CI':
-            print(f'CI instruction: {self.instr.op}')
-            print(f'operations needed: {instr.num_operations}')
+            # print(f'CI instruction: {self.instr.op}')
+            # print(f'operations needed: {instr.num_operations}')
             # pad num operations to the LCM of num_lanes
             interations_needed = int((instr.num_operations + instr.num_operations % self.num_lanes) / self.num_lanes)
-            print(f'interations needed: {interations_needed}')
+            # print(f'interations needed: {interations_needed}')
             self.cycles_needed = self.depth + interations_needed - 1
-            print(f'cycles needed: {self.cycles_needed}')
+            # print(f'cycles needed: {self.cycles_needed}')
         else: # LSI
-            print(f'LSI instruction: {self.instr.op}')
+            # print(f'LSI instruction: {self.instr.op}')
             # the vls pipeline is stalled when there is a bank conflict
             # until the first access to the bank is completed (leaves the pipeline)
-            # how do we model that?
-            addr_idx = 0
-            self.cycles_needed = 0
+            self.cycles_needed = -1
             vls_pipeline = [None] * self.depth # this tracks the state of the pipeline
-            while addr_idx < len(instr.addr) and vls_pipeline.count(None) != len(vls_pipeline):
+            addr_idx = 0
+            while addr_idx < len(instr.addr) or (vls_pipeline.count(None) != len(vls_pipeline)):
+                vls_pipeline = vls_pipeline[1:]
                 if addr_idx < len(instr.addr):
                     # if instr.mask_reg_cpy[addr_idx]: # does this work?? (how do we keep track of mask reg)
                     bank_idx = instr.addr[addr_idx] % self.num_banks    # get which bank to access for current addr
+                    bank_conflict = False
                     for stage in vls_pipeline:
                         # add access to pipeline if there's no conflict
-                        if stage is not None and stage['bank_idx'] != bank_idx:
-                            vls_pipeline.append(
-                                {
-                                    'bank_idx': bank_idx
-                                }
-                            )
-                            addr_idx += 1
+                        if stage is not None and stage['bank_idx'] == bank_idx:
+                            bank_conflict = True
+                            break
+                    if not bank_conflict:
+                        vls_pipeline.append(
+                            {
+                                'bank_idx': bank_idx
+                            }
+                        )
+                        addr_idx += 1
+                    else:
+                        vls_pipeline.append(None)
+                else:
+                    vls_pipeline.append(None)
                 # increment cycles needed and shift pipeline
                 self.cycles_needed += 1
-                vls_pipeline[:-1] = vls_pipeline[1:] + [None]
+                # print(vls_pipeline)
                 assert len(vls_pipeline) == self.depth  # DEV error checking
+            # print(f'cycles needed: {self.cycles_needed}')
 
     def finishedInstr(self):
         # update VRF
@@ -591,7 +617,7 @@ class DMEM():
         self.min_value  = -pow(2, 31)
         self.max_value  = pow(2, 31) - 1
         self.ipfilepath = os.path.abspath(os.path.join(iodir, name + ".txt"))
-        self.opfilepath = os.path.abspath(os.path.join(iodir, name + "OP.txt"))
+        self.opfilepath = os.path.abspath(os.path.join(iodir, name + "_timing_OP.txt"))
         self.data = []
 
         try:
@@ -723,7 +749,7 @@ class RegisterFile():
         self.registers[idx][ele] = val
 
     def dump(self, iodir):
-        opfilepath = os.path.abspath(os.path.join(iodir, self.name + ".txt"))
+        opfilepath = os.path.abspath(os.path.join(iodir, self.name + "_timing.txt"))
         try:
             with open(opfilepath, 'w') as opf:
                 row_format = "{:<13}"*self.vec_length
@@ -772,7 +798,7 @@ class Core():
     def run(self):
         while True:
             instr_str = self.IMEM.Read(self.pc) # reads instr[0] first
-            print(f"cycle {self.cycle_count} - running instr {self.pc}: {instr_str}")
+            # print(f"cycle {self.cycle_count} - running instr {self.pc}: {instr_str}")
 
             # ************************ backend **************************************
             # update pipelines and check if any instructions are complete
@@ -783,7 +809,8 @@ class Core():
 
             # add instruction to compute pipeline if possible
             compute_queue_head = self.compute_queue.peek()
-            if compute_queue_head is not None and not self.exec_pipelines[compute_queue_head.pipeline_needed].isBusy():
+            if compute_queue_head is not None and \
+                    not self.exec_pipelines[compute_queue_head.pipeline_needed].isBusy():
                 self.exec_pipelines[compute_queue_head.pipeline_needed].acceptInstr(compute_queue_head)
                 self.compute_queue.pop()
 
@@ -865,6 +892,7 @@ class Core():
             if not stall_frontend:
                 self.pc += 1
             self.cycle_count += 1
+        print(f'total cycles: {self.cycle_count}')
 
     # Instruction 7
     def CVM(self):

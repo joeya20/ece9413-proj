@@ -545,8 +545,8 @@ class Core():
     # Vector Length Register Operations
     # Instruction 9
     def MTCL(self, sr1_idx):
-        self.len_reg=(self.RFs['SRF'].Read(sr1_idx))
-        
+        self.len_reg = (self.RFs['SRF'].Read(sr1_idx))
+
     # Instruction 10
     def MFCL(self, sr1_idx):
         self.RFs['SRF'].Write(sr1_idx, self.len_reg)
@@ -567,7 +567,7 @@ class Core():
         for i in range(self.len_reg):
             if self.mask_reg[i]:
                 self.VDMEM.Write(sr1+i, vr1[i])
-        
+
     # Instruction 13
     # stride applies to both mem read and vrf write?
     def LVWS(self, vr1_idx, sr1_idx, sr2_idx):

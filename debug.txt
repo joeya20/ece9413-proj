@@ -1,0 +1,11 @@
+IO Directory: /home/joey/ece9413-proj/tests/FFT
+Config - Parameters loaded from file: /home/joey/ece9413-proj/tests/FFT/Config.txt
+Config parameters: {'dataQueueDepth': '4', 'computeQueueDepth': '4', 'vdmNumBanks': '16', 'vlsPipelineDepth': '11', 'numLanes': '4', 'pipelineDepthMul': '4', 'pipelineDepthAdd': '2', 'pipelineDepthDiv': '1', 'pipelineDepthShuffle': '5'}
+IMEM - Instructions loaded from file: /home/joey/ece9413-proj/tests/FFT/resolved_code.asm
+SDMEM - Data loaded from file: /home/joey/ece9413-proj/tests/FFT/SDMEM.txt
+VDMEM - Data loaded from file: /home/joey/ece9413-proj/tests/FFT/VDMEM.txt
+total cycles: 40372
+SRF - Dumped data into output file in path: /home/joey/ece9413-proj/tests/FFT/SRF_timing.txt
+VRF - Dumped data into output file in path: /home/joey/ece9413-proj/tests/FFT/VRF_timing.txt
+SDMEM - Dumped data into output file in path: /home/joey/ece9413-proj/tests/FFT/SDMEM_timing_OP.txt
+VDMEM - Dumped data into output file in path: /home/joey/ece9413-proj/tests/FFT/VDMEM_timing_OP.txt

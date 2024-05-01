@@ -237,6 +237,7 @@ class Core():
     
     def run(self):
         i = 0
+        f = open(os.path.join(iodir, "resolved_code.asm"), 'w')
         while (True):
             # fetch instruction
             instr = self.IMEM.Read(self.pc)
@@ -296,16 +297,74 @@ class Core():
                     self.MFCL(decoded_instr['operand1'])
                 case "LV":
                     self.LV(decoded_instr['operand1'], decoded_instr['operand2'])
+                    if tb == 1:
+                        resolved_instr = f"LV {decoded_instr['operand1']}"
+                        addr_list = []
+                        sr1 = self.RFs['SRF'].Read(decoded_instr['operand2'])
+                        for i in range(self.len_reg):
+                            if self.mask_reg[i]:
+                                addr_list.append(sr1 + i)
+                        resolved_instr = resolved_instr + " " + str(addr_list)
+                        f.write(resolved_instr + '\n')
                 case "SV":
                     self.SV(decoded_instr['operand1'], decoded_instr['operand2'])
+                    if tb == 1:
+                        resolved_instr = f"SV {decoded_instr['operand1']}"
+                        addr_list = []
+                        sr1 = self.RFs['SRF'].Read(decoded_instr['operand2'])
+                        for i in range(self.len_reg):
+                            if self.mask_reg[i]:
+                                addr_list.append(sr1 + i)
+                        resolved_instr = resolved_instr + " " + str(addr_list)
+                        f.write(resolved_instr + '\n')
                 case "LVWS":
                     self.LVWS(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'])
+                    if tb == 1:
+                        resolved_instr = f"LVWS {decoded_instr['operand1']}"
+                        addr_list = []
+                        sr1 = self.RFs['SRF'].Read(decoded_instr['operand2'])
+                        sr2 = self.RFs['SRF'].Read(decoded_instr['operand3'])
+                        for i in range(self.len_reg):
+                            if self.mask_reg[i]:
+                                addr_list.append(sr1 + i * sr2)
+                        resolved_instr = resolved_instr + " " + str(addr_list)
+                        f.write(resolved_instr + '\n')
                 case "SVWS":
                     self.SVWS(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'])
+                    if tb == 1:
+                        resolved_instr = f"SVWS {decoded_instr['operand1']}"
+                        addr_list = []
+                        sr1 = self.RFs['SRF'].Read(decoded_instr['operand2'])
+                        sr2 = self.RFs['SRF'].Read(decoded_instr['operand3'])
+                        for i in range(self.len_reg):
+                            if self.mask_reg[i]:
+                                addr_list.append(sr1 + i * sr2)
+                        resolved_instr = resolved_instr + " " + str(addr_list)
+                        f.write(resolved_instr + '\n')
                 case "LVI":
                     self.LVI(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'])
+                    if tb == 1:
+                        resolved_instr = f"LVI {decoded_instr['operand1']}"
+                        addr_list = []
+                        sr1 = self.RFs['SRF'].Read(decoded_instr['operand2'])
+                        vr2 = self.RFs['VRF'].Read(decoded_instr['operand3'])
+                        for i in range(self.len_reg):
+                            if self.mask_reg[i]:
+                                addr_list.append(sr1 + vr2[i])
+                        resolved_instr = resolved_instr + " " + str(addr_list)
+                        f.write(resolved_instr + '\n')
                 case "SVI":
                     self.SVI(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'])
+                    if tb == 1:
+                        resolved_instr = f"SVI {decoded_instr['operand1']}"
+                        addr_list = []
+                        sr1 = self.RFs['SRF'].Read(decoded_instr['operand2'])
+                        vr2 = self.RFs['VRF'].Read(decoded_instr['operand3'])
+                        for i in range(self.len_reg):
+                            if self.mask_reg[i]:
+                                addr_list.append(sr1 + vr2[i])
+                        resolved_instr = resolved_instr + " " + str(addr_list)
+                        f.write(resolved_instr + '\n')
                 case "LS":
                     self.LS(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'])
                 case "SS":
@@ -353,12 +412,17 @@ class Core():
                 case "PACKHI":
                     self.PACKHI(decoded_instr['operand1'], decoded_instr['operand2'], decoded_instr['operand3'])
                 case "HALT":
+                    f.write(instr + '\n')
                     break
                 case _:
-                    raise IOError(f'Invalid instruction: {decoded_instr[0]}')
+                    raise IOError(f"Invalid instruction: {decoded_instr['instruction']}")
             # update PC
             # skipped for branch instructions
+            if tb == 1 and decoded_instr['instruction'] not in ['LV', 'SV', 'LVI', 'SVI', 'LVWS', 'SVWS']:
+                f.write(instr + '\n')
+            
             self.pc += 1
+        f.close()
 
     def dumpregs(self, iodir):
         for rf in self.RFs.values():
@@ -368,7 +432,6 @@ class Core():
     def ___VV(self, vr1_idx, vr2_idx, vr3_idx, op):
         vr2 = self.RFs['VRF'].Read(vr2_idx)
         vr3 = self.RFs['VRF'].Read(vr3_idx)
-        
         # Q: not sure if we write zeros or retain?
         match op:
             case self.VECTOR_OP_TYPE.ADD:
@@ -394,7 +457,6 @@ class Core():
     def ___VS(self, vr1_idx, vr2_idx, sr1_idx, op):
         vr2 = self.RFs['VRF'].Read(vr2_idx)
         sr1 = self.RFs['SRF'].Read(sr1_idx)
-        
         match op:
             case self.VECTOR_OP_TYPE.ADD:
                 for i in range(self.len_reg):
@@ -483,8 +545,8 @@ class Core():
     # Vector Length Register Operations
     # Instruction 9
     def MTCL(self, sr1_idx):
-        self.update_len_reg(self.RFs['SRF'].Read(sr1_idx))
-        
+        self.len_reg = (self.RFs['SRF'].Read(sr1_idx))
+
     # Instruction 10
     def MFCL(self, sr1_idx):
         self.RFs['SRF'].Write(sr1_idx, self.len_reg)
@@ -505,7 +567,7 @@ class Core():
         for i in range(self.len_reg):
             if self.mask_reg[i]:
                 self.VDMEM.Write(sr1+i, vr1[i])
-        
+
     # Instruction 13
     # stride applies to both mem read and vrf write?
     def LVWS(self, vr1_idx, sr1_idx, sr2_idx):
@@ -677,9 +739,12 @@ if __name__ == "__main__":
     # parse arguments for input file location
     parser = argparse.ArgumentParser(description='Vector Core Performance Model')
     parser.add_argument('--iodir', default="", type=str, help='Path to the folder containing the input files - instructions and data.')
+    parser.add_argument('--tb',default="0", type=str, help='Set to 1 to include verbose traceback.')
+    
     args = parser.parse_args()
 
     iodir = os.path.abspath(args.iodir)
+    tb = int(args.tb)
     print("IO Directory:", iodir)
 
     # Parse IMEM

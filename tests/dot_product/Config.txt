@@ -1,0 +1,10 @@
+dataQueueDepth = 4
+computeQueueDepth = 4
+vdmNumBanks = 4
+vlsPipelineDepth = 11
+numLanes = 4
+pipelineDepthMul = 12
+pipelineDepthAdd = 2
+pipelineDepthDiv = 8
+pipelineDepthShuffle = 5
+test = dot_product
